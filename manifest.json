@@ -1,11 +1,12 @@
 {
-  "name": "Viking Security Systems",
-  "short_name": "Viking Security",
-  "description": "Sistema Administrativo Viking Security Systems",
-  "start_url": "/viking-vss/",
+  "name": "Viking Security Systems [DEV]",
+  "short_name": "Viking DEV",
+  "description": "Sistema Administrativo Viking Security Systems — Entorno de desarrollo, aislado de producción",
+  "start_url": "/viking-vss-dev/",
+  "scope": "/viking-vss-dev/",
   "display": "standalone",
   "background_color": "#111111",
-  "theme_color": "#B71C1C",
+  "theme_color": "#7B4F00",
   "orientation": "landscape-primary",
   "lang": "es",
   "icons": [
