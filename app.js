@@ -1559,7 +1559,7 @@ const aprBtn=p.estado==='Aprobado'&&!clienteYaCreado?'<button class="btn btn-sm 
     return '<tr'+(esKit?' style="background:rgba(255,193,7,0.15)"':'')+'>'+
       '<td><strong>'+p.nombre+'</strong></td>'+
       '<td>'+p.dir+(p.barrio?' · '+p.barrio:'')+'</td>'+
-      '<td>'+mPill(p.modelo)+'</td>'+
+      '<td>'+presLineaPill(p)+'</td>'+
       '<td>'+p.fecha+'</td>'+
       '<td>'+(p.tecnico||'—')+'</td>'+
       '<td>'+presEstadoPill(p.estado)+'</td>'+
@@ -1718,7 +1718,7 @@ const aprBtn=p.estado==='Aprobado'&&!cliExiste?'<button class="btn btn-sm btn-g"
       '<div class="fbox"><div class="fl">Teléfono</div><div class="fv">'+p.tel+'</div></div>'+
       '<div class="fbox"><div class="fl">Dirección</div><div class="fv">'+(p.dir||'—')+'</div></div>'+
       '<div class="fbox"><div class="fl">Barrio</div><div class="fv">'+(p.barrio||'—')+'</div></div>'+
-      '<div class="fbox"><div class="fl">Modelo</div><div class="fv">'+mPill(p.modelo)+'</div></div>'+
+      '<div class="fbox"><div class="fl">Línea de producto</div><div class="fv">'+presLineaPill(p)+'</div></div>'+
       '<div class="fbox"><div class="fl">Estado</div><div class="fv">'+presEstadoPill(p.estado)+'</div></div>'+
     '</div>'+
     '<hr class="div">'+
@@ -1764,17 +1764,20 @@ function generarPDF(id){
   const descVal=parseFloat(p.descuento)||0;
   const totalFinal=totalConMargen-descVal;
 
-  // Sensores
-  var sensorRows='';
-  const SENSOR_ITEMS=['Puerta','Ventana','PuertaVentana','Boton','Vibracion','Agua','Interruptor s/neutro','Interruptor router','Rele','Luz'];
-  SENSOR_ITEMS.forEach(function(s){
-    const qty=p.precios&&p.precios[s]?parseFloat(p.precios[s].cant)||0:0;
-    if(qty<=0)return;
-    var ubics='';
-    if(p.sensores&&p.sensores[s]&&p.sensores[s].ubicaciones){
-      ubics=p.sensores[s].ubicaciones.filter(Boolean).join(', ');
-    }
-    sensorRows+='<tr><td>'+s+'</td><td style="text-align:center">'+qty+'</td><td style="color:#555">'+(ubics||'—')+'</td></tr>';
+  // Ítems presupuestados con cantidad cargada, agrupados por sección (genérico, según línea)
+  var linea=getLineaPres(p);
+  var itemRows='';
+  var seccionesPDF=[];
+  (linea&&linea.itemsPresupuesto||[]).forEach(function(it){ if(seccionesPDF.indexOf(it.seccion)===-1) seccionesPDF.push(it.seccion); });
+  seccionesPDF.forEach(function(seccion){
+    var filasSec='';
+    (linea.itemsPresupuesto||[]).filter(function(it){return it.seccion===seccion;}).forEach(function(it){
+      var i=p.precios&&p.precios[it.nombre];
+      var qty=i?parseFloat(i.cant)||0:0;
+      if(qty<=0) return;
+      filasSec+='<tr><td>'+it.nombre+'</td><td style="text-align:center">'+qty+'</td></tr>';
+    });
+    if(filasSec) itemRows+='<tr><td colspan="2" style="background:#f0f0f0;font-weight:700;font-size:10px;text-transform:uppercase">'+seccion+'</td></tr>'+filasSec;
   });
 
   const descRow=descVal>0?
@@ -1813,7 +1816,7 @@ function generarPDF(id){
     '<button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>'+
     '<div class="header">'+
       (LOGO?'<img src="'+LOGO+'" alt="'+empresa+'">':'')+
-      '<div><h1>'+empresa.toUpperCase()+'</h1><p>Sistema de seguridad inteligente Zigbee</p></div>'+
+      '<div><h1>'+empresa.toUpperCase()+'</h1><p>Presupuesto de instalación</p></div>'+
       '<div class="hr"><div class="pn">'+num+'</div><div class="ps">Emitido: '+fecha+'</div></div>'+
     '</div>'+
     '<div class="body">'+
@@ -1829,14 +1832,14 @@ function generarPDF(id){
     '</div>'+
 
     '<div class="section"><div class="st">Sistema propuesto</div>'+
-      '<div class="mb">Zpro '+(p.modelo||'Base')+'</div>'+
-      '<div class="mdesc">'+(DB.config&&DB.config['desc_'+p.modelo]?DB.config['desc_'+p.modelo]:{Base:'Activación y desactivación del sistema desde el celular, en cualquier momento y desde cualquier lugar. Notificaciones instantáneas ante cualquier evento de seguridad — apertura de puertas, ventanas o activación de sensores. Monitoreo del estado del sistema en tiempo real desde Telegram. Historial de eventos registrados con fecha y hora. Control mediante menú interactivo en Telegram — sin necesidad de aplicaciones adicionales. Compatible con sensores de puerta, ventana y botón de pánico. Sirena exterior de larga durabilidad y alta potencia sonora.',Energy:'Activación y desactivación del sistema desde el celular, en cualquier momento y desde cualquier lugar. Notificaciones instantáneas ante cualquier evento de seguridad — apertura de puertas, ventanas o activación de sensores. Monitoreo del estado del sistema en tiempo real desde Telegram. Historial de eventos registrados con fecha y hora. Control mediante menú interactivo en Telegram — sin necesidad de aplicaciones adicionales. Compatible con sensores de puerta, ventana y botón de pánico. Sirena exterior de larga durabilidad y alta potencia sonora. Detección y notificación inmediata ante cortes de energía eléctrica. Batería de respaldo que mantiene el sistema activo sin suministro eléctrico. Monitoreo del nivel de carga de la batería con alertas cuando requiere atención.',Comfort:'Activación y desactivación del sistema desde el celular, en cualquier momento y desde cualquier lugar. Notificaciones instantáneas ante cualquier evento de seguridad — apertura de puertas, ventanas o activación de sensores. Monitoreo del estado del sistema en tiempo real desde Telegram. Historial de eventos registrados con fecha y hora. Control mediante menú interactivo en Telegram — sin necesidad de aplicaciones adicionales. Compatible con sensores de puerta, ventana y botón de pánico. Sirena exterior de larga durabilidad y alta potencia sonora. Detección y notificación inmediata ante cortes de energía eléctrica. Batería de respaldo que mantiene el sistema activo sin suministro eléctrico. Monitoreo del nivel de carga de la batería con alertas cuando requiere atención. Control de luces Zigbee integrado al sistema de seguridad. Activación automática de luces ante detección de alarma. Automatización por horario o evento. Control de cargas eléctricas mediante relés.',Black:'Activación y desactivación del sistema desde el celular, en cualquier momento y desde cualquier lugar. Notificaciones instantáneas ante cualquier evento de seguridad — apertura de puertas, ventanas o activación de sensores. Monitoreo del estado del sistema en tiempo real desde Telegram. Historial de eventos registrados con fecha y hora. Control mediante menú interactivo en Telegram — sin necesidad de aplicaciones adicionales. Compatible con sensores de puerta, ventana y botón de pánico. Sirena exterior de larga durabilidad y alta potencia sonora. Detección y notificación inmediata ante cortes de energía eléctrica. Batería de respaldo que mantiene el sistema activo sin suministro eléctrico. Monitoreo del nivel de carga de la batería con alertas cuando requiere atención. Control de luces Zigbee integrado al sistema de seguridad. Activación automática de luces ante detección de alarma. Automatización por horario o evento. Control de cargas eléctricas mediante relés. Simulador de presencia inteligente con sincronización horaria NTP, activación en horario nocturno y secuencias aleatorias de luces. Gestión de múltiples usuarios con perfiles de acceso diferenciados. Historial extendido de eventos del sistema. Automatizaciones personalizadas adaptadas a las necesidades del inmueble.'}[p.modelo]||'')+'</div>'+
+      '<div class="mb">'+(linea?linea.nombre:'—')+'</div>'+
+      '<div class="mdesc">'+(linea&&linea.descripcion?linea.descripcion:'')+'</div>'+
     '</div>'+
 
-    (sensorRows?
-    '<div class="section"><div class="st">Sensores y dispositivos</div>'+
-      '<table class="t"><thead><tr><th>Dispositivo</th><th style="text-align:center">Cant.</th><th>Ubicaciones</th></tr></thead>'+
-      '<tbody>'+sensorRows+'</tbody></table></div>':'')+
+    (itemRows?
+    '<div class="section"><div class="st">Equipamiento y materiales</div>'+
+      '<table class="t"><thead><tr><th>Ítem</th><th style="text-align:center">Cant.</th></tr></thead>'+
+      '<tbody>'+itemRows+'</tbody></table></div>':'')+
 
     '<div class="section"><div class="st">Condiciones comerciales</div>'+
       '<div class="cg">'+
@@ -1852,7 +1855,7 @@ function generarPDF(id){
       '<table class="t">'+
         '<thead><tr><th colspan="2">Descripción</th><th style="text-align:right">Importe</th></tr></thead>'+
         '<tbody>'+
-          '<tr><td colspan="2">Sistema de seguridad Zpro '+(p.modelo||'Base')+' — instalación y configuración completa</td>'+
+          '<tr><td colspan="2">'+(linea?linea.nombre:'Sistema')+' — instalación y configuración completa</td>'+
             '<td style="text-align:right;font-weight:600">'+formatMonto(totalConMargen,p.moneda)+'</td></tr>'+
           descRow+
         '</tbody>'+
@@ -3039,7 +3042,7 @@ function enviarEmailPres(id){
   const asunto = encodeURIComponent('Presupuesto ' + num + ' - ' + empresa);
   const cuerpo = encodeURIComponent(
     'Estimado/a ' + p.nombre + ',\n\n' +
-    'Le enviamos adjunto el presupuesto ' + num + ' correspondiente al sistema de seguridad Zpro ' + p.modelo + '.\n\n' +
+    'Le enviamos adjunto el presupuesto ' + num + ' correspondiente a ' + (getLineaPres(p)?getLineaPres(p).nombre:'su sistema') + '.\n\n' +
     'Validez: ' + (p.validez||15) + ' dias corridos.\n\n' +
     'Ante cualquier consulta no dude en contactarnos.\n\n' +
     'Saludos cordiales,\n' + firma +
@@ -3448,13 +3451,13 @@ function reportePresupuestos(){
         '<span style="font-weight:700">$'+Math.round(total).toLocaleString('es-AR')+(tc>1?' / U$S '+(total/tc).toFixed(0):'')+'</span>'+
       '</div>'+
       '<table style="width:100%;border-collapse:collapse">'+
-      '<thead><tr style="background:var(--surface2)"><th style="padding:5px 10px;font-size:10px">N°</th><th style="padding:5px 10px;font-size:10px">Cliente</th><th style="padding:5px 10px;font-size:10px">Modelo</th><th style="padding:5px 10px;font-size:10px">Fecha</th><th style="padding:5px 10px;font-size:10px;text-align:right">Total</th></tr></thead>'+
+      '<thead><tr style="background:var(--surface2)"><th style="padding:5px 10px;font-size:10px">N°</th><th style="padding:5px 10px;font-size:10px">Cliente</th><th style="padding:5px 10px;font-size:10px">Línea</th><th style="padding:5px 10px;font-size:10px">Fecha</th><th style="padding:5px 10px;font-size:10px;text-align:right">Total</th></tr></thead>'+
       '<tbody>'+grupo.map(function(p){
         var tot=calcTotal(p);
         return '<tr style="border-bottom:1px solid var(--border)">'+
           '<td style="padding:5px 10px;font-family:monospace;font-size:11px">'+presNum(p)+'</td>'+
           '<td style="padding:5px 10px">'+p.nombre+'</td>'+
-          '<td style="padding:5px 10px">'+mPill(p.modelo)+'</td>'+
+          '<td style="padding:5px 10px">'+presLineaPill(p)+'</td>'+
           '<td style="padding:5px 10px;font-size:11px">'+p.fecha+'</td>'+
           '<td style="padding:5px 10px;text-align:right;font-weight:700">$'+Math.round(tot).toLocaleString('es-AR')+'</td>'+
         '</tr>';
@@ -4092,13 +4095,13 @@ function reportePendientes(){
   if(!lista.length){
     h += '<div class="empty">Sin presupuestos enviados sin respuesta.</div>';
   } else {
-    h += '<table><thead><tr><th>N°</th><th>Cliente</th><th>Modelo</th><th>Fecha envío</th><th>Días sin respuesta</th></tr></thead><tbody>';
+    h += '<table><thead><tr><th>N°</th><th>Cliente</th><th>Línea</th><th>Fecha envío</th><th>Días sin respuesta</th></tr></thead><tbody>';
     lista.forEach(function(p){
       var dias=Math.round((new Date()-new Date(p.fecha))/86400000);
       h += '<tr>'+
         '<td style="font-family:monospace">'+presNum(p)+'</td>'+
         '<td>'+p.nombre+'</td>'+
-        '<td>'+mPill(p.modelo)+'</td>'+
+        '<td>'+presLineaPill(p)+'</td>'+
         '<td>'+p.fecha+'</td>'+
         '<td style="font-weight:700;color:'+(dias>30?'var(--red)':'var(--amber)')+'">'+dias+' días</td>'+
       '</tr>';
@@ -5084,7 +5087,7 @@ function busquedaGlobal(q){
   // Presupuestos
   DB.presupuestos.forEach(function(p){
     if((p.nombre+(p.dir||'')+(p.tel||'')+(p.email||'')).toLowerCase().includes(ql)){
-      results.push({tipo:'Presupuesto',icon:'📄',label:presNum(p)+' — '+p.nombre,sub:p.estado+' · '+p.modelo,action:"abrirEditorPres("+p.id+")"});
+      results.push({tipo:'Presupuesto',icon:'📄',label:presNum(p)+' — '+p.nombre,sub:p.estado+' · '+(getLineaPres(p)?getLineaPres(p).nombre:'sin línea'),action:"abrirEditorPres("+p.id+")"});
     }
   });
 
@@ -6040,10 +6043,11 @@ function renderLineasProducto(){
     return '<div class="fab-linea-card">'+
       '<div class="fab-linea-head" onclick="toggleLineaProducto('+l.id+')">'+
         '<div><div class="fab-linea-nombre">'+l.nombre+'</div>'+
-          '<div class="fab-linea-meta">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div>'+
+          '<div class="fab-linea-meta">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · '+(l.itemsPresupuesto||[]).length+' ítem'+((l.itemsPresupuesto||[]).length!==1?'s':'')+' de presupuesto · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div>'+
         '</div>'+
         '<div class="fab-linea-acts" onclick="event.stopPropagation()">'+
           '<button class="btn btn-sm" onclick="agregarFaseLinea('+l.id+')">➕ Fase</button>'+
+          '<button class="btn btn-sm" onclick="abrirConfigPresupuesto('+l.id+')">⚙️ Presupuesto</button>'+
           '<button class="btn btn-sm" style="color:var(--red)" onclick="borrarLineaProducto('+l.id+')">🗑️</button>'+
           '<span style="cursor:pointer;padding:0 4px;font-size:12px;color:var(--text2)">'+(abierta?'▲':'▼')+'</span>'+
         '</div>'+
@@ -6119,9 +6123,71 @@ function renderLineasProducto(){
 function crearLineaProducto(){
   var nombre=prompt('Nombre de la nueva línea de producto:');
   if(!nombre) return;
-  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, descripcion:'', checklistObligatorio:false, kit:[], fases:[]});
+  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, descripcion:'', checklistObligatorio:false, kit:[], fases:[], itemsPresupuesto:[]});
   save(); renderLineasProducto();
 }
+
+// ---- Configuración de presupuesto por línea de producto ----
+function abrirConfigPresupuesto(lineaId){
+  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+  if(!l) return;
+  if(!l.itemsPresupuesto) l.itemsPresupuesto=[];
+  var items=l.itemsPresupuesto;
+  var secciones=[];
+  items.forEach(function(it){ if(secciones.indexOf(it.seccion)===-1) secciones.push(it.seccion); });
+
+  var body='<p style="font-size:12.5px;color:var(--text2);margin-bottom:14px">Estos ítems van a aparecer en la tabla de precios al armar un presupuesto para "'+l.nombre+'". Agrupalos en secciones (ej: Equipamiento, Sensores, Mano de obra, Adicionales) — las que necesites.</p>'+
+    '<button class="btn btn-p btn-sm" onclick="agregarItemPresupuesto('+l.id+')" style="margin-bottom:14px">➕ Agregar ítem</button>';
+
+  if(!items.length){
+    body+='<p class="fab-empty">Sin ítems todavía.</p>';
+  } else {
+    secciones.forEach(function(sec){
+      body+='<div style="font-weight:700;font-size:11px;color:var(--text2);margin:12px 0 6px;letter-spacing:.3px">'+sec.toUpperCase()+'</div>';
+      items.filter(function(it){return it.seccion===sec;}).forEach(function(it){
+        body+='<div class="fab-kit-row">'+
+          '<span style="flex:1">'+it.nombre+'</span>'+
+          '<button class="fab-icon-btn" onclick="editarItemPresupuesto('+l.id+','+it.id+')">✏️</button>'+
+          '<button class="fab-icon-btn" style="color:var(--red)" onclick="borrarItemPresupuesto('+l.id+','+it.id+')">🗑️</button>'+
+        '</div>';
+      });
+    });
+  }
+  openModal('⚙️ Configuración de presupuesto — '+l.nombre, body, null, true);
+}
+function agregarItemPresupuesto(lineaId){
+  var seccion=prompt('Sección (ej: Equipamiento, Sensores, Mano de obra, Adicionales):');
+  if(!seccion) return;
+  var nombre=prompt('Nombre del ítem:');
+  if(!nombre) return;
+  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+  if(!l.itemsPresupuesto) l.itemsPresupuesto=[];
+  l.itemsPresupuesto.push({id:DB.nid++, seccion:seccion, nombre:nombre});
+  save();
+  abrirConfigPresupuesto(lineaId);
+  renderLineasProducto();
+}
+function editarItemPresupuesto(lineaId, itemId){
+  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+  var it=l.itemsPresupuesto.find(function(x){return x.id===itemId;});
+  var nombre=prompt('Editar nombre del ítem:', it.nombre);
+  if(!nombre) return;
+  var seccion=prompt('Editar sección:', it.seccion);
+  if(!seccion) return;
+  it.nombre=nombre; it.seccion=seccion;
+  save();
+  abrirConfigPresupuesto(lineaId);
+  renderLineasProducto();
+}
+function borrarItemPresupuesto(lineaId, itemId){
+  if(!confirm('¿Eliminar este ítem?')) return;
+  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+  l.itemsPresupuesto=l.itemsPresupuesto.filter(function(x){return x.id!==itemId;});
+  save();
+  abrirConfigPresupuesto(lineaId);
+  renderLineasProducto();
+}
+
 function editarDescripcionLinea(lineaId){
   var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
   openModal('Descripción del producto',
@@ -7073,12 +7139,16 @@ vssRestaurarCarpeta();
 // Reconecta Drive en silencio si ya había una sesión válida (sin popup)
 if(vssGTokenCargarLocal()) vssSyncSetBadge('ok'); else vssSyncSetBadge('noauth');
 // PRESUPUESTOS helpers =====================================
-function defPrecios(){
+function getLineaPres(p){ return p.lineaId?DB.lineasProducto.find(function(l){return l.id===p.lineaId;}):null; }
+// Pill que muestra la línea de producto de un presupuesto (reemplaza el viejo mPill(p.modelo))
+function presLineaPill(p){
+  var l=getLineaPres(p);
+  return '<span class="pill p-x">'+(l?l.nombre:'— sin línea —')+'</span>';
+}
+
+function defPrecios(linea){
   const items={};
-  ['Central Zpro','Bateria 12V 7Ah','Cargador','Fuente/Transformador','UPS','Sirena exterior'].forEach(function(k){ items[k]={cant:1,precio:0}; });
-  ['Puerta','Ventana','PuertaVentana','Boton','Vibracion','Agua','Interruptor s/neutro','Interruptor router','Rele','Luz'].forEach(function(s){ items[s]={cant:0,precio:0}; });
-  ['Hs. instalacion','Hs. configuracion'].forEach(function(k){ items[k]={cant:1,precio:0}; });
-  ['Cableado (ml)','Cajas de paso','Gabinete/caja estanca','Tornilleria y fijaciones','Traslado/viaticos'].forEach(function(k){ items[k]={cant:0,precio:0}; });
+  (linea&&linea.itemsPresupuesto||[]).forEach(function(it){ items[it.nombre]={cant:0,precio:0}; });
   return items;
 }
 
@@ -7110,20 +7180,18 @@ function formatMonto(v,moneda){
   return ((moneda==='USD')?'U$S ':'$')+Math.round(v).toLocaleString('es-AR');
 }
 
+// Genérico: suma el subtotal de cada ítem de precios agrupado por la "sección" que
+// definió la línea de producto en su Configuración de presupuesto.
 function calcSubtotales(p){
-  const cat={materiales:0,sensores:0,mo:0,adicionales:0};
-  const matK=['Central Zpro','Bateria 12V 7Ah','Cargador','Fuente/Transformador','UPS','Sirena exterior'];
-  const moK=['Hs. instalacion','Hs. configuracion'];
-  const adK=['Cableado (ml)','Cajas de paso','Gabinete/caja estanca','Tornilleria y fijaciones','Traslado/viaticos'];
-  const SENSOR_ITEMS=['Puerta','Ventana','PuertaVentana','Boton','Vibracion','Agua','Interruptor s/neutro','Interruptor router','Rele','Luz'];
+  const cat={};
+  const linea=getLineaPres(p);
+  const items=(linea&&linea.itemsPresupuesto)||[];
   if(!p.precios) return cat;
-  Object.entries(p.precios).forEach(function(entry){
-    const k=entry[0], i=entry[1];
-    const val=(parseFloat(i.cant)||0)*(parseFloat(i.precio)||0);
-    if(matK.includes(k)) cat.materiales+=val;
-    else if(SENSOR_ITEMS.includes(k)) cat.sensores+=val;
-    else if(moK.includes(k)) cat.mo+=val;
-    else if(adK.includes(k)) cat.adicionales+=val;
+  items.forEach(function(it){
+    var i=p.precios[it.nombre];
+    if(!i) return;
+    var val=(parseFloat(i.cant)||0)*(parseFloat(i.precio)||0);
+    cat[it.seccion]=(cat[it.seccion]||0)+val;
   });
   return cat;
 }
@@ -7184,28 +7252,22 @@ function nuevaVersionPres(id){
 function abrirEditorPres(id){
   const p=DB.presupuestos.find(function(x){return x.id===id;});
   if(!p) return;
-  if(!p.precios) p.precios=defPrecios();
-  const SENSOR_ITEMS=['Puerta','Ventana','PuertaVentana','Boton','Vibracion','Agua','Interruptor s/neutro','Interruptor router','Rele','Luz'];
-  SENSOR_ITEMS.forEach(function(s){
-    if(p.sensores&&p.sensores[s]&&p.sensores[s].qty>0){
-      if(!p.precios[s]) p.precios[s]={cant:0,precio:0};
-      p.precios[s].cant=p.sensores[s].qty;
-    }
-  });
+  if(!p.precios) p.precios={};
+  var linea=getLineaPres(p);
+  var items=(linea&&linea.itemsPresupuesto)||[];
 
-  function fila(key,label,readonlyCant){
-    var i=p.precios[key]||{cant:0,precio:0};
+  function fila(nombre){
+    var i=p.precios[nombre]||{cant:0,precio:0};
     var sub=(parseFloat(i.cant)||0)*(parseFloat(i.precio)||0);
-    var ro=readonlyCant?"readonly":"";
     var h="<tr style='border-bottom:1px solid var(--border)'>";
-    h+="<td style='padding:6px 10px;font-size:12px'>"+label+"</td>";
+    h+="<td style='padding:6px 10px;font-size:12px'>"+nombre+"</td>";
     h+="<td style='padding:4px 6px'><input type='number' min='0' value='"+(i.cant||0)+"'";
-    h+=" "+ro+" style='width:60px;text-align:center;border:1px solid var(--border);padding:4px 6px;font-size:12px'";
-    h+=" data-pid='"+id+"' data-key='"+key+"' data-field='cant'";
+    h+=" style='width:60px;text-align:center;border:1px solid var(--border);padding:4px 6px;font-size:12px'";
+    h+=" data-pid='"+id+"' data-key='"+nombre+"' data-field='cant'";
     h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value)'></td>";
     h+="<td style='padding:4px 6px'><input type='number' min='0' value='"+(i.precio||0)+"'";
     h+=" style='width:110px;border:1px solid var(--border);padding:4px 8px;font-size:12px'";
-    h+=" data-pid='"+id+"' data-key='"+key+"' data-field='precio'";
+    h+=" data-pid='"+id+"' data-key='"+nombre+"' data-field='precio'";
     h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value)'></td>";
     h+="<td style='padding:6px 10px;font-size:12px;font-weight:600;text-align:right'>"+formatMonto(sub,p.moneda)+"</td>";
     h+="</tr>";
@@ -7241,58 +7303,58 @@ function abrirEditorPres(id){
     return h;
   };
 
-  const tablaPrecios=
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'+
-    '<thead><tr style="background:var(--surface2)">'+
-      '<th style="padding:7px 10px;text-align:left;font-size:10px">Item</th>'+
-      '<th style="padding:7px 10px;font-size:10px;text-align:center">Cant.</th>'+
-      '<th style="padding:7px 10px;font-size:10px">Precio unit.</th>'+
-      '<th style="padding:7px 10px;font-size:10px;text-align:right">Subtotal</th>'+
-    '</tr></thead><tbody>'+
-    sec('Equipamiento central',
-      fila('Central Zpro','Central Zpro')+
-      fila('Bateria 12V 7Ah','Bateria 12V 7Ah')+fila('Cargador','Cargador')+
-      fila('Fuente/Transformador','Fuente/Transformador')+
-      fila('UPS','UPS')+fila('Sirena exterior','Sirena exterior')
-    )+
-    sec('Sensores y dispositivos',
-      SENSOR_ITEMS.map(function(s){
-        const ro=!!(p.sensores&&p.sensores[s]&&p.sensores[s].qty>0);
-        return fila(s,s,ro);
-      }).join('')
-    )+
-    sec('Mano de obra',fila('Hs. instalacion','Horas de instalacion')+fila('Hs. configuracion','Horas de configuracion'))+
-    sec('Adicionales',
-      fila('Cableado (ml)','Cableado (ml)')+fila('Cajas de paso','Cajas de paso')+
-      fila('Gabinete/caja estanca','Gabinete/caja estanca')+
-      fila('Tornilleria y fijaciones','Tornilleria y fijaciones')+
-      fila('Traslado/viaticos','Traslado/viaticos')
-    )+
-    '</tbody></table>';
+  // Selector de línea de producto — dispara un re-render completo del modal al cambiar
+  var lineaSelectHTML='<div class="fg" style="margin:0"><label>Línea de producto</label>'+
+    '<select style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" onchange="cambiarLineaPres('+id+',this.value)">'+
+      '<option value="">-- elegir --</option>'+
+      DB.lineasProducto.map(function(l){return '<option value="'+l.id+'"'+(p.lineaId===l.id?' selected':'')+'>'+l.nombre+'</option>';}).join('')+
+    '</select></div>';
 
-  const resumen=
-    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:12px;color:var(--text2)">'+
-        '<div>Equipamiento: <strong>'+formatMonto(sub.materiales,p.moneda)+'</strong></div>'+
-        '<div>Sensores: <strong>'+formatMonto(sub.sensores,p.moneda)+'</strong></div>'+
-        '<div>Mano de obra: <strong>'+formatMonto(sub.mo,p.moneda)+'</strong></div>'+
-        '<div>Adicionales: <strong>'+formatMonto(sub.adicionales,p.moneda)+'</strong></div>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end">'+
-        '<div class="fg" style="margin:0"><label>Margen (%)</label>'+
-          '<input type="number" min="0" max="100" value="'+(p.margen||0)+'" '+
-          'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
-          "oninput=\"updPres("+id+",'margen',this.value)\"></div>"+
-        '<div class="fg" style="margin:0"><label>Descuento ($)</label>'+
-          '<input type="number" min="0" value="'+(p.descuento||0)+'" '+
-          'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
-          "oninput=\"updPres("+id+",'descuento',this.value)\"></div>"+
-        '<div style="background:#111;color:#fff;border-radius:var(--r);padding:10px;text-align:center">'+
-          '<div style="font-size:9px;color:#aaa;text-transform:uppercase;margin-bottom:3px">Total final</div>'+
-          '<div style="font-size:17px;font-weight:700">'+formatMonto(totalFinal,p.moneda)+'</div>'+
+  var secciones=[];
+  items.forEach(function(it){ if(secciones.indexOf(it.seccion)===-1) secciones.push(it.seccion); });
+
+  var tablaPrecios, resumen;
+  if(!linea){
+    tablaPrecios='<p style="padding:16px;text-align:center;color:var(--text2);font-size:12.5px;background:var(--surface2);border-radius:var(--r);margin-bottom:12px">Elegí una línea de producto arriba para cargar la tabla de precios.</p>';
+    resumen='';
+  } else if(!items.length){
+    tablaPrecios='<p style="padding:16px;text-align:center;color:var(--text2);font-size:12.5px;background:var(--surface2);border-radius:var(--r);margin-bottom:12px">Esta línea todavía no tiene ítems de presupuesto configurados. Andá a <b>Líneas de producto → ⚙️ Presupuesto</b> para cargarlos.</p>';
+    resumen='';
+  } else {
+    tablaPrecios=
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'+
+      '<thead><tr style="background:var(--surface2)">'+
+        '<th style="padding:7px 10px;text-align:left;font-size:10px">Item</th>'+
+        '<th style="padding:7px 10px;font-size:10px;text-align:center">Cant.</th>'+
+        '<th style="padding:7px 10px;font-size:10px">Precio unit.</th>'+
+        '<th style="padding:7px 10px;font-size:10px;text-align:right">Subtotal</th>'+
+      '</tr></thead><tbody>'+
+      secciones.map(function(s){
+        return sec(s, items.filter(function(it){return it.seccion===s;}).map(function(it){return fila(it.nombre);}).join(''));
+      }).join('')+
+      '</tbody></table>';
+
+    resumen=
+      '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:12px;color:var(--text2)">'+
+          secciones.map(function(s){return '<div>'+s+': <strong>'+formatMonto(sub[s]||0,p.moneda)+'</strong></div>';}).join('')+
         '</div>'+
-      '</div>'+
-    '</div>';
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end">'+
+          '<div class="fg" style="margin:0"><label>Margen (%)</label>'+
+            '<input type="number" min="0" max="100" value="'+(p.margen||0)+'" '+
+            'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
+            "oninput=\"updPres("+id+",'margen',this.value)\"></div>"+
+          '<div class="fg" style="margin:0"><label>Descuento ($)</label>'+
+            '<input type="number" min="0" value="'+(p.descuento||0)+'" '+
+            'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
+            "oninput=\"updPres("+id+",'descuento',this.value)\"></div>"+
+          '<div style="background:#111;color:#fff;border-radius:var(--r);padding:10px;text-align:center">'+
+            '<div style="font-size:9px;color:#aaa;text-transform:uppercase;margin-bottom:3px">Total final</div>'+
+            '<div style="font-size:17px;font-weight:700">'+formatMonto(totalFinal,p.moneda)+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+  }
 
   openModal('Presupuesto '+presNum(p),
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'+
@@ -7311,7 +7373,7 @@ function abrirEditorPres(id){
       inp('Email','email',p.email,'email')+
       inp('Direccion','dir',p.dir)+
       inp('Barrio','barrio',p.barrio)+
-      sel('Modelo Zpro','modelo',['Base','Energy','Comfort','Black'],p.modelo)+
+      lineaSelectHTML+
       inp('Tecnico','tecnico',p.tecnico)+
     '</div>'+
     '<hr class="div"><div class="sectitle">Computo de materiales y precios</div>'+
@@ -7341,6 +7403,18 @@ function abrirEditorPres(id){
     return true;
   });
 }
+function cambiarLineaPres(id, lineaId){
+  var p=DB.presupuestos.find(function(x){return x.id===id;});
+  if(!p) return;
+  p.lineaId=lineaId?parseInt(lineaId):null;
+  if(!p.precios) p.precios={};
+  var linea=getLineaPres(p);
+  (linea&&linea.itemsPresupuesto||[]).forEach(function(it){
+    if(!p.precios[it.nombre]) p.precios[it.nombre]={cant:0,precio:0};
+  });
+  save();
+  abrirEditorPres(id);
+}
 
 function nuevoPresupuesto(){
   const p = Object.assign({
@@ -7349,9 +7423,9 @@ function nuevoPresupuesto(){
     nombre:'', tel:'', email:'', dir:'', barrio:'', ambientes:'',
     tipo:'Casa', sup:'', plantas:'Planta baja', material:'Mampostería',
     alarma:'No', perro:'No', horario:'Siempre habitado',
-    modelo:'Base', sensores:{}, router:'', distancia:'', obstaculos:'',
+    lineaId:null, modelo:'', sensores:{}, router:'', distancia:'', obstaculos:'',
     tecnico:'', obs:'', estado:'Borrador', fecha:today(),
-    precios:defPrecios()
+    precios:{}
   }, defPres());
   DB.presupuestos.unshift(p);
   save();
