@@ -5664,7 +5664,7 @@ function abrirOT(id){
   // Header info
   var headerHTML=
     '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-      '<span style="font-family:monospace;font-weight:700;font-size:14px;color:var(--primary)">'+f.nserie+'</span>'+
+      '<span style="font-family:monospace;font-weight:700;font-size:14px;color:var(--brand)">'+f.nserie+'</span>'+
       ('<span class="pill p-x">'+(linea?linea.nombre:'⚠️ línea eliminada')+'</span>')+
       '<span class="pill '+(f.estado==='Pendiente'?'p-a':f.estado==='En fabricación'?'p-b':'p-g')+'">'+f.estado+'</span>'+
       (f.cliente?'<span style="font-size:11px;color:var(--text2)">Cliente: '+f.cliente+'</span>':'')+
@@ -5736,16 +5736,17 @@ function abrirOT(id){
     var completada=et.completada;
     var bloqueada=ei>etapaActualIdx&&!completada;
 
-    var opsHTML=e.ops.map(function(op){
+    var opsHTML=e.ops.map(function(op,oi){
       var checked=et.ops[op]?'checked':'';
       var disabled=bloqueada||completada?'disabled':'';
-      return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;cursor:'+(bloqueada||completada?'default':'pointer')+'">'+
-        '<input type="checkbox" '+checked+' '+disabled+' onchange="toggleOpFab('+id+',\''+e.id+'\',\''+op.replace(/\'/g,"\\'")+'\')" style="margin:0">'+
-        '<span style="'+(et.ops[op]?'text-decoration:line-through;color:var(--text2)':'')+'">'+op+'</span>'+
-      '</label>';
+      return '<div class="fab-checklist-item'+(et.ops[op]?' done':'')+'">'+
+        '<input type="checkbox" '+checked+' '+disabled+' onchange="toggleOpFab('+id+',\''+e.id+'\',\''+op.replace(/\'/g,"\\'")+'\')">'+
+        '<span class="fab-checklist-num">'+(oi+1)+'.</span>'+
+        '<span class="fab-checklist-desc">'+op+'</span>'+
+      '</div>';
     }).join('');
 
-    var borderColor=completada?'var(--green)':esActual?'var(--primary)':'var(--border)';
+    var borderColor=completada?'var(--green)':esActual?'var(--brand)':'var(--border)';
     var icon=completada?'✅':esActual?'▶️':'⬜';
 
     // Warning de checklist obligatorio — solo en la etapa actual
@@ -5754,29 +5755,30 @@ function abrirOT(id){
       var faltan=e.ops.filter(function(op){return !et.ops[op];});
       if(linea.checklistObligatorio){
         checklistWarnHTML = faltan.length>0
-          ? '<div style="background:#FFF8E1;border-left:3px solid #7B4F00;border-radius:0 6px 6px 0;padding:8px 10px;margin-top:8px;font-size:11.5px;color:#5c3d00">⚠️ Faltan tildar '+faltan.length+' tarea'+(faltan.length!==1?'s':'')+' para completar esta etapa:<br>'+faltan.map(function(op){return '• '+op;}).join('<br>')+'</div>'
-          : '<div style="background:var(--surface2);border-left:3px solid var(--green);border-radius:0 6px 6px 0;padding:8px 10px;margin-top:8px;font-size:11.5px;color:var(--green)">✓ Todas las tareas tildadas — ya podés completar esta etapa.</div>';
+          ? '<div class="fab-warn-box">⚠️ Faltan tildar '+faltan.length+' tarea'+(faltan.length!==1?'s':'')+' para completar esta etapa:<br>'+faltan.map(function(op){return '• '+op;}).join('<br>')+'</div>'
+          : '<div class="fab-ok-box">✓ Todas las tareas tildadas — ya podés completar esta etapa.</div>';
       } else {
-        checklistWarnHTML = '<div style="font-size:10.5px;color:var(--text2);margin-top:6px">ℹ️ Checklist informativo en esta línea — no bloquea el avance. (Se activa en "Líneas de producto".)</div>';
+        checklistWarnHTML = '<div class="fab-info-box">ℹ️ Checklist informativo en esta línea — no bloquea el avance. (Se activa en "Líneas de producto".)</div>';
       }
     }
     var bloqueadoPorChecklist = esActual && linea.checklistObligatorio && e.ops.filter(function(op){return !et.ops[op];}).length>0;
 
-    return '<div class="card" style="margin-bottom:8px;border-left:3px solid '+borderColor+'">'+
-      '<div class="ch">'+
-        '<div class="ct" style="color:'+(completada?'var(--green)':esActual?'var(--primary)':'var(--text2)')+'">'+icon+' '+(ei+1)+'. '+e.nombre+'</div>'+
+    return '<div class="fab-fase-item" style="border-left:3px solid '+borderColor+'">'+
+      '<div class="fab-fase-head">'+
+        '<span class="fab-fase-num">'+icon+' FASE '+(ei+1)+'</span>'+
+        '<span class="fab-fase-nombre" style="color:'+(completada?'var(--green)':esActual?'var(--brand)':'var(--text2)')+'">'+e.nombre+'</span>'+
         (esActual?
           '<button class="btn btn-sm btn-g" '+(bloqueadoPorChecklist?'disabled':'')+' onclick="completarEtapaFab('+id+',\''+e.id+'\')">✔ Completar etapa</button>':
           '')+ 
-        (completada?'<span style="font-size:11px;color:var(--green)">✅ '+et.fecha+(et.responsable?' · '+et.responsable:'')+'</span>':'')+
+        (completada?'<span style="font-size:11px;color:var(--green);white-space:nowrap">✅ '+et.fecha+(et.responsable?' · '+et.responsable:'')+'</span>':'')+
       '</div>'+
-      '<div class="card-body">'+
-        (e.ops.length?opsHTML:'<span style="color:var(--text2);font-size:11px">Sin operaciones definidas.</span>')+
+      '<div class="fab-fase-tareas">'+
+        (e.ops.length?opsHTML:'<p class="fab-empty" style="padding:2px 0">Sin operaciones definidas.</p>')+
         (esActual?checklistWarnHTML:'')+
         (esActual?
-          '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
-            '<input id="fab-resp-'+e.id+'" placeholder="Responsable" value="'+(et.responsable||'')+'" onblur="saveEtapaFields('+id+',\''+e.id+'\')" style="padding:5px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;flex:1;min-width:120px">'+
-            '<input id="fab-obs-'+e.id+'" placeholder="Observaciones de la etapa" value="'+(et.obs||'')+'" onblur="saveEtapaFields('+id+',\''+e.id+'\')" style="padding:5px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;flex:2;min-width:180px">'+
+          '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
+            '<input id="fab-resp-'+e.id+'" placeholder="Responsable" value="'+(et.responsable||'')+'" onblur="saveEtapaFields('+id+',\''+e.id+'\')" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;flex:1;min-width:120px">'+
+            '<input id="fab-obs-'+e.id+'" placeholder="Observaciones de la etapa" value="'+(et.obs||'')+'" onblur="saveEtapaFields('+id+',\''+e.id+'\')" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;flex:2;min-width:180px">'+
           '</div>':'')+
       '</div></div>';
   }).join(''):'';
@@ -6035,69 +6037,81 @@ function renderLineasProducto(){
     var nFases=l.fases.length;
     var nTareas=l.fases.reduce(function(a,f){return a+f.ops.length;},0);
     var kit=l.kit||[];
-    return '<div class="card" style="margin-bottom:10px">'+
-      '<div class="ch" style="cursor:pointer" onclick="toggleLineaProducto('+l.id+')">'+
-        '<div class="ct">'+l.nombre+'<div style="font-size:10.5px;font-weight:400;color:var(--text2);margin-top:2px">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div></div>'+
-        '<div style="display:flex;gap:4px" onclick="event.stopPropagation()">'+
+    return '<div class="fab-linea-card">'+
+      '<div class="fab-linea-head" onclick="toggleLineaProducto('+l.id+')">'+
+        '<div><div class="fab-linea-nombre">'+l.nombre+'</div>'+
+          '<div class="fab-linea-meta">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div>'+
+        '</div>'+
+        '<div class="fab-linea-acts" onclick="event.stopPropagation()">'+
           '<button class="btn btn-sm" onclick="agregarFaseLinea('+l.id+')">➕ Fase</button>'+
           '<button class="btn btn-sm" style="color:var(--red)" onclick="borrarLineaProducto('+l.id+')">🗑️</button>'+
-          '<span style="cursor:pointer;padding:0 4px">'+(abierta?'▲':'▼')+'</span>'+
+          '<span style="cursor:pointer;padding:0 4px;font-size:12px;color:var(--text2)">'+(abierta?'▲':'▼')+'</span>'+
         '</div>'+
       '</div>'+
       (abierta?
-      '<div class="card-body">'+
-        '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">'+
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
-            '<div style="font-weight:700;font-size:11.5px;color:var(--text2)">📝 DESCRIPCIÓN DEL PRODUCTO</div>'+
+      '<div class="fab-linea-body">'+
+        '<div class="fab-section-block">'+
+          '<div class="fab-section-title"><span>📝 DESCRIPCIÓN DEL PRODUCTO</span>'+
             '<button class="btn btn-sm" onclick="editarDescripcionLinea('+l.id+')">✏️ '+(l.descripcion?'Editar':'Agregar')+'</button>'+
           '</div>'+
-          (l.descripcion?'<p style="font-size:12.5px;color:var(--text);margin-top:6px;white-space:pre-wrap">'+l.descripcion+'</p>':'<p style="font-size:11.5px;color:var(--text2);margin-top:6px;font-style:italic">Sin descripción todavía.</p>')+
+          (l.descripcion?'<p style="font-size:12.5px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+l.descripcion+'</p>':'<p class="fab-empty" style="padding:0">Sin descripción todavía.</p>')+
         '</div>'+
-        '<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400;margin-bottom:14px;cursor:pointer">'+
-          '<input type="checkbox" '+(l.checklistObligatorio?'checked':'')+' onchange="toggleChecklistLinea('+l.id+')" style="margin:0">'+
+
+        '<label class="fab-toggle-row">'+
+          '<input type="checkbox" '+(l.checklistObligatorio?'checked':'')+' onchange="toggleChecklistLinea('+l.id+')" style="margin:0;width:auto">'+
           'Exigir todas las tareas tildadas para poder completar una etapa'+
         '</label>'+
-        '<div style="font-weight:700;font-size:11.5px;color:var(--text2);margin-bottom:6px">📦 KIT DE MATERIALES</div>'+
-        (kit.length===0?'<p style="color:var(--text2);font-size:11.5px;margin-bottom:8px">Sin materiales todavía.</p>':
-          kit.map(function(k){
-            var comp=DB.componentes.find(function(c){return c.id===k.compId;})||{};
-            var stock=stockActual(k.compId);
-            return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-bottom:1px dashed var(--border)">'+
-              '<span style="flex:1">'+(comp.codigo?comp.codigo+' — ':'')+(comp.desc||k.compNombre||'—')+'</span>'+
-              '<span style="color:var(--text2)">x'+k.cant+'</span>'+
-              '<span style="color:var(--text2);font-size:11px">stock: '+stock+'</span>'+
-              '<button class="btn btn-sm" style="color:var(--red)" onclick="quitarKitItemLinea('+l.id+','+k.id+')">🗑️</button>'+
+
+        '<div class="fab-section-block">'+
+          '<div class="fab-section-title"><span>📦 KIT DE MATERIALES</span></div>'+
+          (kit.length===0?'<p class="fab-empty">Sin materiales todavía.</p>':
+            kit.map(function(k){
+              var comp=DB.componentes.find(function(c){return c.id===k.compId;})||{};
+              var stock=stockActual(k.compId);
+              return '<div class="fab-kit-row">'+
+                '<span style="flex:1">'+(comp.codigo?comp.codigo+' — ':'')+(comp.desc||k.compNombre||'—')+'</span>'+
+                '<span style="color:var(--text2)">x'+k.cant+'</span>'+
+                '<span style="color:var(--text2);font-size:11px">stock: '+stock+'</span>'+
+                '<button class="fab-icon-btn" style="color:var(--red)" onclick="quitarKitItemLinea('+l.id+','+k.id+')">🗑️</button>'+
+              '</div>';
+            }).join('')
+          )+
+          '<button class="btn btn-sm" style="margin-top:10px" onclick="agregarKitItemLinea('+l.id+')">➕ Ítem al kit</button>'+
+        '</div>'+
+
+        '<div class="fab-section-block">'+
+          '<div class="fab-section-title"><span>🔧 FASES</span></div>'+
+          (nFases===0?'<p class="fab-empty">Sin fases todavía.</p>':
+          l.fases.map(function(f,fi){
+            return '<div class="fab-fase-item">'+
+              '<div class="fab-fase-head">'+
+                '<span class="fab-fase-num">FASE '+(fi+1)+'</span>'+
+                '<span class="fab-fase-nombre">'+f.nombre+'</span>'+
+                '<div class="fab-fase-acts">'+
+                  '<button class="fab-icon-btn" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',-1)" title="Subir">▲</button>'+
+                  '<button class="fab-icon-btn" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',1)" title="Bajar">▼</button>'+
+                  '<button class="fab-icon-btn" onclick="editarFaseLinea('+l.id+',\''+f.id+'\')" title="Editar">✏️</button>'+
+                  '<button class="fab-icon-btn" style="color:var(--red)" onclick="borrarFaseLinea('+l.id+',\''+f.id+'\')" title="Borrar">🗑️</button>'+
+                '</div>'+
+              '</div>'+
+              '<div class="fab-fase-tareas">'+
+                (f.ops.length===0?'<p class="fab-empty" style="padding:2px 0">Sin tareas todavía.</p>':f.ops.map(function(op,oi){
+                  return '<div class="fab-tarea-row">'+
+                    '<span class="fab-tarea-num">'+(oi+1)+'.</span>'+
+                    '<span class="fab-tarea-desc">'+op+'</span>'+
+                    '<div class="fab-tarea-acts">'+
+                      '<button class="fab-icon-btn" onclick="moverTareaLinea('+l.id+',\''+f.id+'\','+oi+',-1)">▲</button>'+
+                      '<button class="fab-icon-btn" onclick="moverTareaLinea('+l.id+',\''+f.id+'\','+oi+',1)">▼</button>'+
+                      '<button class="fab-icon-btn" onclick="editarTareaLinea('+l.id+',\''+f.id+'\','+oi+')">✏️</button>'+
+                      '<button class="fab-icon-btn" style="color:var(--red)" onclick="borrarTareaLinea('+l.id+',\''+f.id+'\','+oi+')">🗑️</button>'+
+                    '</div>'+
+                  '</div>';
+                }).join(''))+
+                '<button class="btn btn-sm" style="margin-top:8px" onclick="agregarTareaLinea('+l.id+',\''+f.id+'\')">➕ Tarea</button>'+
+              '</div>'+
             '</div>';
-          }).join('')
-        )+
-        '<button class="btn btn-sm" style="margin-top:8px;margin-bottom:16px" onclick="agregarKitItemLinea('+l.id+')">➕ Ítem al kit</button>'+
-        '<div style="font-weight:700;font-size:11.5px;color:var(--text2);margin:10px 0 6px;border-top:1px solid var(--border);padding-top:12px">🔧 FASES</div>'+
-        (nFases===0?'<p style="color:var(--text2);font-size:11.5px">Sin fases todavía.</p>':
-        l.fases.map(function(f,fi){
-          return '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">'+
-            '<div style="background:var(--surface2);padding:7px 10px;display:flex;align-items:center;gap:8px">'+
-              '<span style="background:var(--primary);color:#fff;font-size:10px;font-weight:800;border-radius:5px;padding:2px 7px">FASE '+(fi+1)+'</span>'+
-              '<span style="font-weight:700;font-size:12.5px;flex:1">'+f.nombre+'</span>'+
-              '<button class="btn btn-sm" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',-1)" style="padding:2px 6px">▲</button>'+
-              '<button class="btn btn-sm" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',1)" style="padding:2px 6px">▼</button>'+
-              '<button class="btn btn-sm" onclick="editarFaseLinea('+l.id+',\''+f.id+'\')" style="padding:2px 6px">✏️</button>'+
-              '<button class="btn btn-sm" style="color:var(--red);padding:2px 6px" onclick="borrarFaseLinea('+l.id+',\''+f.id+'\')">🗑️</button>'+
-            '</div>'+
-            '<div style="padding:8px 12px">'+
-              f.ops.map(function(op,oi){
-                return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px dashed var(--border)">'+
-                  '<span style="color:var(--text2);width:20px">'+(oi+1)+'.</span>'+
-                  '<span style="flex:1">'+op+'</span>'+
-                  '<button class="btn btn-sm" onclick="moverTareaLinea('+l.id+',\''+f.id+'\','+oi+',-1)" style="padding:1px 5px">▲</button>'+
-                  '<button class="btn btn-sm" onclick="moverTareaLinea('+l.id+',\''+f.id+'\','+oi+',1)" style="padding:1px 5px">▼</button>'+
-                  '<button class="btn btn-sm" onclick="editarTareaLinea('+l.id+',\''+f.id+'\','+oi+')" style="padding:1px 5px">✏️</button>'+
-                  '<button class="btn btn-sm" style="color:var(--red);padding:1px 5px" onclick="borrarTareaLinea('+l.id+',\''+f.id+'\','+oi+')">🗑️</button>'+
-                '</div>';
-              }).join('')+
-              '<button class="btn btn-sm" style="margin-top:6px" onclick="agregarTareaLinea('+l.id+',\''+f.id+'\')">➕ Tarea</button>'+
-            '</div>'+
-          '</div>';
-        }).join(''))+
+          }).join(''))+
+        '</div>'+
       '</div>':'');
   }).join('');
 }
