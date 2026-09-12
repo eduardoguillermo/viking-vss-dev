@@ -1653,7 +1653,7 @@ function importarRelevamiento(input){
 }
 function vssSyncRelevamientosDrive(){
   vssDriveGetToken(function(token){
-    vssDriveEnsureFolderNamed(token, 'VikingRelevamiento', function(folderId){
+    vssDriveEnsureFolderNamed(token, 'VikingRelevamientoDEV', function(folderId){
       vssDriveBuscarArchivo(token, folderId, 'relevamientos_pendientes.json', function(f){
         if(!f){ alert('No hay relevamientos pendientes en Drive todavía.'); return; }
         vssDriveBajarJSON(token, f.id, function(data){
@@ -7134,7 +7134,7 @@ function importarMant(input){
 }
 function vssSyncMantenimientoDrive(){
   vssDriveGetToken(function(token){
-    vssDriveEnsureFolderNamed(token, 'VikingMantenimiento', function(folderId){
+    vssDriveEnsureFolderNamed(token, 'VikingMantenimientoDEV', function(folderId){
       vssDriveBuscarArchivo(token, folderId, 'completado.json', function(f){
         if(!f){ alert('No hay ningún mantenimiento completado en Drive todavía.'); return; }
         vssDriveBajarJSON(token, f.id, function(data){
@@ -7151,7 +7151,7 @@ function vssSyncMantenimientoDrive(){
 // para que viking-mantenimiento lo pueda traer sin transferencia manual.
 function vssSubirPendienteMantDrive(export_data){
   vssDriveGetToken(function(token){
-    vssDriveEnsureFolderNamed(token, 'VikingMantenimiento', function(folderId){
+    vssDriveEnsureFolderNamed(token, 'VikingMantenimientoDEV', function(folderId){
       vssDriveSubirArchivo(token, folderId, 'pendiente.json', export_data, function(){
         // silencioso: no interrumpe el flujo de exportarMant/exportarMantNew
       });
