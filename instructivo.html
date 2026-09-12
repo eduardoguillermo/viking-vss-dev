@@ -129,7 +129,7 @@
 
 <div class="layout">
 <nav class="sidebar">
-  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.9</p></div></div>
+  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.10</p></div></div>
 
   <div class="section-label">Introducción</div>
   <a href="#intro">🏠 ¿Qué es esta app?</a>
@@ -181,7 +181,7 @@
     <h1>🛡️ Viking Security Systems</h1>
     <p>Manual del sistema administrativo — ciclo completo del negocio, de presupuesto a mantenimiento</p>
     <div class="hero-badges">
-      <span class="badge badge-red">✓ v2.9</span>
+      <span class="badge badge-red">✓ v2.10</span>
       <span class="badge badge-blue">✓ Sin servidor</span>
       <span class="badge badge-amber">✓ Datos locales</span>
     </div>
@@ -516,6 +516,14 @@
 
     <details class="changelog-details" open>
       <summary class="changelog-summary">Ver historial de versiones</summary>
+
+      <div class="changelog-entry">
+        <div class="changelog-version"><span class="v-num">v2.10</span><span class="changelog-tag tag-fix">fix</span></div>
+        <ul class="changelog-list">
+          <li>Corregido: el listado de Presupuestos tiraba un error ("m is not defined") cada vez que se guardaba o recargaba con al menos un presupuesto cargado — una línea pegada por error desde el código de Movimientos de stock, sin relación con Presupuestos. Esto hacía que el modal no se cerrara al guardar y que el total no se viera actualizado al reabrir (los datos sí se guardaban igual, gracias al autoguardado de cada campo, pero la experiencia parecía rota).</li>
+          <li>Este mismo bug está presente también en producción — no se tocó ahí, pero queda identificado para portarlo cuando corresponda.</li>
+        </ul>
+      </div>
 
       <div class="changelog-entry">
         <div class="changelog-version"><span class="v-num">v2.9</span><span class="changelog-tag tag-feature">feature</span></div>
