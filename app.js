@@ -7275,15 +7275,48 @@ function updPres(id,campo,valor){
   // Debounce save - wait 800ms after last change
   if(_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(function(){ save(); _saveTimer=null; }, 800);
+  if(campo==='margen'||campo==='descuento') actualizarResumenPres(id);
 }
 
-function updatePrecio(id,key,field,valor){
+function updatePrecio(id,key,field,valor,inputEl){
   const p=DB.presupuestos.find(function(x){return x.id===id;});
   if(!p||!p.precios) return;
   if(!p.precios[key]) p.precios[key]={cant:0,precio:0};
   p.precios[key][field]=parseFloat(valor)||0;
   if(_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(function(){ save(); _saveTimer=null; }, 800);
+
+  // Recalcular en vivo: subtotal de esta fila puntual
+  if(inputEl){
+    var row=inputEl.closest('tr');
+    var subCell=row&&row.querySelector('td:last-child');
+    if(subCell){
+      var i=p.precios[key];
+      var sub=(parseFloat(i.cant)||0)*(parseFloat(i.precio)||0);
+      subCell.textContent=formatMonto(sub,p.moneda);
+    }
+  }
+  actualizarResumenPres(id);
+}
+
+// Recalcula y pinta en vivo los subtotales por sección y el total final del editor de presupuesto abierto
+function actualizarResumenPres(id){
+  const p=DB.presupuestos.find(function(x){return x.id===id;});
+  if(!p) return;
+  var linea=getLineaPres(p);
+  var items=(linea&&linea.itemsPresupuesto)||[];
+  var secciones=[];
+  items.forEach(function(it){ if(secciones.indexOf(it.seccion)===-1) secciones.push(it.seccion); });
+  var sub=calcSubtotales(p);
+  secciones.forEach(function(s,si){
+    var el=document.getElementById('pres-sec-'+si);
+    if(el) el.textContent=formatMonto(sub[s]||0,p.moneda);
+  });
+  var bruto=Object.values(sub).reduce(function(a,v){return a+v;},0);
+  var margenVal=bruto*(parseFloat(p.margen)||0)/100;
+  var totalFinal=bruto+margenVal-(parseFloat(p.descuento)||0);
+  var totalEl=document.getElementById('pres-total-final');
+  if(totalEl) totalEl.textContent=formatMonto(totalFinal,p.moneda);
 }
 
 function nuevaVersionPres(id){
@@ -7306,7 +7339,7 @@ function abrirEditorPres(id){
   var linea=getLineaPres(p);
   var items=(linea&&linea.itemsPresupuesto)||[];
 
-  function fila(nombre){
+  function fila(nombre, idx){
     var i=p.precios[nombre]||{cant:0,precio:0};
     var sub=(parseFloat(i.cant)||0)*(parseFloat(i.precio)||0);
     var h="<tr style='border-bottom:1px solid var(--border)'>";
@@ -7314,12 +7347,14 @@ function abrirEditorPres(id){
     h+="<td style='padding:4px 6px'><input type='number' min='0' value='"+(i.cant||0)+"'";
     h+=" style='width:60px;text-align:center;border:1px solid var(--border);padding:4px 6px;font-size:12px'";
     h+=" data-pid='"+id+"' data-key='"+nombre+"' data-field='cant'";
-    h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value)'></td>";
+    h+=" onfocus='this.select()'";
+    h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value,this)'></td>";
     h+="<td style='padding:4px 6px'><input type='number' min='0' value='"+(i.precio||0)+"'";
     h+=" style='width:110px;border:1px solid var(--border);padding:4px 8px;font-size:12px'";
     h+=" data-pid='"+id+"' data-key='"+nombre+"' data-field='precio'";
-    h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value)'></td>";
-    h+="<td style='padding:6px 10px;font-size:12px;font-weight:600;text-align:right'>"+formatMonto(sub,p.moneda)+"</td>";
+    h+=" onfocus='this.select()'";
+    h+=" oninput='updatePrecio(parseInt(this.dataset.pid),this.dataset.key,this.dataset.field,this.value,this)'></td>";
+    h+="<td id='pres-sub-"+idx+"' style='padding:6px 10px;font-size:12px;font-weight:600;text-align:right'>"+formatMonto(sub,p.moneda)+"</td>";
     h+="</tr>";
     return h;
   }
@@ -7339,6 +7374,7 @@ function abrirEditorPres(id){
     h+="<input type='"+type+"' value='"+(val||"")+"'";
     h+=" style='padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%'";
     h+=" data-pid='"+id+"' data-campo='"+campo+"'";
+    h+=(type==='number'?" onfocus='this.select()'":"");
     h+=" oninput='updPres(parseInt(this.dataset.pid),this.dataset.campo,this.value)'></div>";
     return h;
   };
@@ -7371,6 +7407,7 @@ function abrirEditorPres(id){
     tablaPrecios='<p style="padding:16px;text-align:center;color:var(--text2);font-size:12.5px;background:var(--surface2);border-radius:var(--r);margin-bottom:12px">Esta línea todavía no tiene ítems de presupuesto configurados. Andá a <b>Líneas de producto → ⚙️ Presupuesto</b> para cargarlos.</p>';
     resumen='';
   } else {
+    var filaIdx=0;
     tablaPrecios=
       '<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'+
       '<thead><tr style="background:var(--surface2)">'+
@@ -7380,27 +7417,27 @@ function abrirEditorPres(id){
         '<th style="padding:7px 10px;font-size:10px;text-align:right">Subtotal</th>'+
       '</tr></thead><tbody>'+
       secciones.map(function(s){
-        return sec(s, items.filter(function(it){return it.seccion===s;}).map(function(it){return fila(it.nombre);}).join(''));
+        return sec(s, items.filter(function(it){return it.seccion===s;}).map(function(it){return fila(it.nombre, filaIdx++);}).join(''));
       }).join('')+
       '</tbody></table>';
 
     resumen=
       '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:12px;color:var(--text2)">'+
-          secciones.map(function(s){return '<div>'+s+': <strong>'+formatMonto(sub[s]||0,p.moneda)+'</strong></div>';}).join('')+
+        '<div id="pres-resumen-secciones" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:12px;color:var(--text2)">'+
+          secciones.map(function(s,si){return '<div>'+s+': <strong id="pres-sec-'+si+'">'+formatMonto(sub[s]||0,p.moneda)+'</strong></div>';}).join('')+
         '</div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end">'+
           '<div class="fg" style="margin:0"><label>Margen (%)</label>'+
             '<input type="number" min="0" max="100" value="'+(p.margen||0)+'" '+
             'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
-            "oninput=\"updPres("+id+",'margen',this.value)\"></div>"+
+            "onfocus=\"this.select()\" oninput=\"updPres("+id+",'margen',this.value)\"></div>"+
           '<div class="fg" style="margin:0"><label>Descuento ($)</label>'+
             '<input type="number" min="0" value="'+(p.descuento||0)+'" '+
             'style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" '+
-            "oninput=\"updPres("+id+",'descuento',this.value)\"></div>"+
+            "onfocus=\"this.select()\" oninput=\"updPres("+id+",'descuento',this.value)\"></div>"+
           '<div style="background:#111;color:#fff;border-radius:var(--r);padding:10px;text-align:center">'+
             '<div style="font-size:9px;color:#aaa;text-transform:uppercase;margin-bottom:3px">Total final</div>'+
-            '<div style="font-size:17px;font-weight:700">'+formatMonto(totalFinal,p.moneda)+'</div>'+
+            '<div id="pres-total-final" style="font-size:17px;font-weight:700">'+formatMonto(totalFinal,p.moneda)+'</div>'+
           '</div>'+
         '</div>'+
       '</div>';
