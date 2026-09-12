@@ -7456,6 +7456,13 @@ function abrirEditorPres(id){
       inp('Tipo de cambio','tipoCambio',p.tipoCambio,'number')+
     '</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<div class="fg full" style="margin:0;grid-column:1/-1"><label>Cliente existente (opcional)</label>'+
+        '<select style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%" onchange="cargarClienteEnPresupuesto('+id+',this.value)">'+
+          '<option value="">-- nuevo / escribir a mano --</option>'+
+          DB.clientes.slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');}).map(function(c){return '<option value="'+c.id+'">'+c.nombre+(c.barrio?' — '+c.barrio:'')+'</option>';}).join('')+
+        '</select>'+
+        '<div style="font-size:11px;color:var(--text2);margin-top:4px">Elegir uno completa nombre, teléfono, email, dirección y barrio abajo — se pueden seguir editando después.</div>'+
+      '</div>'+
       inp('Nombre cliente *','nombre',p.nombre)+
       inp('Telefono','tel',p.tel)+
       inp('Email','email',p.email,'email')+
@@ -7502,6 +7509,24 @@ function cambiarLineaPres(id, lineaId){
   (linea&&linea.itemsPresupuesto||[]).forEach(function(it){
     if(!p.precios[it.nombre]) p.precios[it.nombre]={cant:0,precio:0};
   });
+  save();
+  abrirEditorPres(id);
+}
+
+// Autocompleta los datos de contacto del presupuesto a partir de un cliente ya cargado en el sistema.
+// No vincula p.clienteId (ese campo se reserva para "convertirCliente", que crea un cliente NUEVO
+// a partir del presupuesto) — esto es solo una carga rápida de datos, se puede seguir editando después.
+function cargarClienteEnPresupuesto(id, clienteId){
+  var p=DB.presupuestos.find(function(x){return x.id===id;});
+  if(!p) return;
+  if(!clienteId) return; // "-- nuevo / escribir a mano --"
+  var c=DB.clientes.find(function(x){return x.id===parseInt(clienteId);});
+  if(!c) return;
+  p.nombre=c.nombre||'';
+  p.tel=c.tel||'';
+  p.email=c.email||'';
+  p.dir=c.lote||'';
+  p.barrio=c.barrio||'';
   save();
   abrirEditorPres(id);
 }
