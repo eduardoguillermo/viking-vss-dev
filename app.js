@@ -1487,6 +1487,7 @@ function renderBackupInfo(){
 // =======================================================
 // MODAL GEN=RICO
 // =======================================================
+var _presDraftId=null; // id de un presupuesto recién creado por "Nuevo manual" que todavía no se guardó con datos
 function openModal(title,body,onSave,soloVista){
   var footer = soloVista
     ? '<button class="btn" onclick="cerrarModal()">Cerrar</button>'
@@ -1503,7 +1504,21 @@ function openModal(title,body,onSave,soloVista){
     document.getElementById('msave').onclick=function(){ if(onSave()!==false) cerrarModal(); };
   }
 }
-function cerrarModal(){ document.getElementById('mbox').innerHTML=''; }
+function cerrarModal(){
+  // Si había un presupuesto recién creado por "Nuevo manual" y se cierra sin cargar
+  // nada, se borra solo en vez de quedar como un registro vacío en la lista.
+  if(_presDraftId){
+    var p=DB.presupuestos.find(function(x){return x.id===_presDraftId;});
+    var vacio=p && !p.nombre.trim() && !Object.values(p.precios||{}).some(function(i){return (parseFloat(i.cant)||0)>0;});
+    if(vacio){
+      DB.presupuestos=DB.presupuestos.filter(function(x){return x.id!==_presDraftId;});
+      save();
+      if(typeof renderPresupuestos==='function') renderPresupuestos();
+    }
+    _presDraftId=null;
+  }
+  document.getElementById('mbox').innerHTML='';
+}
 
 // =======================================================
 // PWA
@@ -7432,8 +7447,10 @@ function abrirEditorPres(id){
     '</div>'
   , function(){
     // Force save before closing
+    if(!p.nombre.trim()){ alert('Ingresá el nombre del cliente antes de guardar.'); return false; }
     if(_saveTimer){ clearTimeout(_saveTimer); _saveTimer=null; }
     save();
+    _presDraftId=null; // se guardó explícitamente con el botón, ya no es un borrador a limpiar
     renderPresupuestos();
     return true;
   });
@@ -7464,6 +7481,7 @@ function nuevoPresupuesto(){
   }, defPres());
   DB.presupuestos.unshift(p);
   save();
+  _presDraftId=p.id;
   abrirEditorPres(p.id);
 }
 
