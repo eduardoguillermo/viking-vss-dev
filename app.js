@@ -6155,32 +6155,50 @@ function abrirConfigPresupuesto(lineaId){
   openModal('⚙️ Configuración de presupuesto — '+l.nombre, body, null, true);
 }
 function agregarItemPresupuesto(lineaId){
-  var seccion=prompt('Sección (ej: Equipamiento, Sensores, Mano de obra, Adicionales):');
-  if(seccion===null) return; // canceló
-  if(!seccion.trim()){ alert('Tenés que escribir un nombre de sección.'); return; }
-  var nombre=prompt('Nombre del ítem:');
-  if(nombre===null) return; // canceló
-  if(!nombre.trim()){ alert('Tenés que escribir un nombre de ítem.'); return; }
-  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
-  if(!l.itemsPresupuesto) l.itemsPresupuesto=[];
-  l.itemsPresupuesto.push({id:DB.nid++, seccion:seccion.trim(), nombre:nombre.trim()});
-  save();
-  abrirConfigPresupuesto(lineaId);
-  renderLineasProducto();
+  openModal('➕ Agregar ítem de presupuesto',
+    '<div class="fg2">'+
+      '<div class="fg full"><label>Sección</label>'+
+        '<input id="ip-seccion" type="text" placeholder="Ej: Equipamiento, Sensores, Mano de obra, Adicionales" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%"></div>'+
+      '<div class="fg full"><label>Nombre del ítem</label>'+
+        '<input id="ip-nombre" type="text" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%"></div>'+
+    '</div>',
+    function(){
+      var seccion=document.getElementById('ip-seccion').value.trim();
+      var nombre=document.getElementById('ip-nombre').value.trim();
+      if(!seccion){ alert('Tenés que escribir un nombre de sección.'); return false; }
+      if(!nombre){ alert('Tenés que escribir un nombre de ítem.'); return false; }
+      var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+      if(!l.itemsPresupuesto) l.itemsPresupuesto=[];
+      l.itemsPresupuesto.push({id:DB.nid++, seccion:seccion, nombre:nombre});
+      save();
+      renderLineasProducto();
+      abrirConfigPresupuesto(lineaId);
+      return false; // ya manejamos la transición de vuelta a Configuración de presupuesto
+    }
+  );
 }
 function editarItemPresupuesto(lineaId, itemId){
   var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
   var it=l.itemsPresupuesto.find(function(x){return x.id===itemId;});
-  var nombre=prompt('Editar nombre del ítem:', it.nombre);
-  if(nombre===null) return;
-  if(!nombre.trim()){ alert('Tenés que escribir un nombre de ítem.'); return; }
-  var seccion=prompt('Editar sección:', it.seccion);
-  if(seccion===null) return;
-  if(!seccion.trim()){ alert('Tenés que escribir un nombre de sección.'); return; }
-  it.nombre=nombre.trim(); it.seccion=seccion.trim();
-  save();
-  abrirConfigPresupuesto(lineaId);
-  renderLineasProducto();
+  openModal('✏️ Editar ítem de presupuesto',
+    '<div class="fg2">'+
+      '<div class="fg full"><label>Sección</label>'+
+        '<input id="ip-seccion" type="text" value="'+it.seccion+'" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%"></div>'+
+      '<div class="fg full"><label>Nombre del ítem</label>'+
+        '<input id="ip-nombre" type="text" value="'+it.nombre+'" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%"></div>'+
+    '</div>',
+    function(){
+      var seccion=document.getElementById('ip-seccion').value.trim();
+      var nombre=document.getElementById('ip-nombre').value.trim();
+      if(!seccion){ alert('Tenés que escribir un nombre de sección.'); return false; }
+      if(!nombre){ alert('Tenés que escribir un nombre de ítem.'); return false; }
+      it.seccion=seccion; it.nombre=nombre;
+      save();
+      renderLineasProducto();
+      abrirConfigPresupuesto(lineaId);
+      return false;
+    }
+  );
 }
 function borrarItemPresupuesto(lineaId, itemId){
   if(!confirm('¿Eliminar este ítem?')) return;
