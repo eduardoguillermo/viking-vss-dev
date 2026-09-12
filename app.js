@@ -6046,6 +6046,13 @@ function renderLineasProducto(){
       '</div>'+
       (abierta?
       '<div class="card-body">'+
+        '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
+            '<div style="font-weight:700;font-size:11.5px;color:var(--text2)">📝 DESCRIPCIÓN DEL PRODUCTO</div>'+
+            '<button class="btn btn-sm" onclick="editarDescripcionLinea('+l.id+')">✏️ '+(l.descripcion?'Editar':'Agregar')+'</button>'+
+          '</div>'+
+          (l.descripcion?'<p style="font-size:12.5px;color:var(--text);margin-top:6px;white-space:pre-wrap">'+l.descripcion+'</p>':'<p style="font-size:11.5px;color:var(--text2);margin-top:6px;font-style:italic">Sin descripción todavía.</p>')+
+        '</div>'+
         '<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400;margin-bottom:14px;cursor:pointer">'+
           '<input type="checkbox" '+(l.checklistObligatorio?'checked':'')+' onchange="toggleChecklistLinea('+l.id+')" style="margin:0">'+
           'Exigir todas las tareas tildadas para poder completar una etapa'+
@@ -6098,8 +6105,21 @@ function renderLineasProducto(){
 function crearLineaProducto(){
   var nombre=prompt('Nombre de la nueva línea de producto:');
   if(!nombre) return;
-  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, checklistObligatorio:false, kit:[], fases:[]});
+  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, descripcion:'', checklistObligatorio:false, kit:[], fases:[]});
   save(); renderLineasProducto();
+}
+function editarDescripcionLinea(lineaId){
+  var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
+  openModal('Descripción del producto',
+    '<div class="fg2">'+
+      '<div class="fg full"><label>Descripción</label>'+
+        '<textarea id="ld-desc" rows="4" placeholder="Qué es, para qué sirve, características del producto..." style="width:100%;padding:8px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box">'+(l.descripcion||'')+'</textarea></div>'+
+    '</div>',
+    function(){
+      l.descripcion=document.getElementById('ld-desc').value.trim();
+      save(); renderLineasProducto(); return true;
+    }
+  );
 }
 function borrarLineaProducto(id){
   var enUso=(DB.fabricacion||[]).some(function(f){return f.lineaId===id;});
