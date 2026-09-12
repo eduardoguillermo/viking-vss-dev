@@ -3056,13 +3056,14 @@ function enviarEmailPres(id){
   const asunto = encodeURIComponent('Presupuesto ' + num + ' - ' + empresa);
   const cuerpo = encodeURIComponent(
     'Estimado/a ' + p.nombre + ',\n\n' +
-    'Le enviamos adjunto el presupuesto ' + num + ' correspondiente a ' + (getLineaPres(p)?getLineaPres(p).nombre:'su sistema') + '.\n\n' +
+    'Le enviamos el presupuesto ' + num + ' correspondiente a ' + (getLineaPres(p)?getLineaPres(p).nombre:'su sistema') + '.\n\n' +
     'Validez: ' + (p.validez||15) + ' dias corridos.\n\n' +
     'Ante cualquier consulta no dude en contactarnos.\n\n' +
     'Saludos cordiales,\n' + firma +
     (cfg.tel ? '\nTel: ' + cfg.tel : '') +
     (cfg.email ? '\n' + cfg.email : '')
   );
+  alert('📎 Se va a abrir Gmail con el texto listo, pero el PDF NO se adjunta solo.\n\nSi todavía no lo generaste, tocá primero "📄 PDF", guardalo, y después adjuntalo a mano en Gmail (clip 📎) antes de enviar.');
   // Open Gmail compose
   var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1' +
     (emailDest ? '&to=' + encodeURIComponent(emailDest) : '') +
