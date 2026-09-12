@@ -98,3 +98,48 @@ hr.div{border:none;border-top:1px solid var(--border);margin:10px 0}
 .badge-backup{font-size:10px;color:var(--text3);margin-left:auto}
 .install-btn{display:none;background:#1565C0;color:#fff;border:none;border-radius:var(--r);padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;gap:5px;align-items:center}
 .install-btn.show{display:inline-flex}
+
+/* ===== FABRICACIÓN — Líneas de producto (estética heredada del prototipo) ===== */
+.fab-linea-card{border:1.5px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;background:#fff}
+.fab-linea-head{padding:14px 18px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;cursor:pointer;flex-wrap:wrap;gap:10px}
+.fab-linea-nombre{font-weight:700;font-size:15px;color:var(--text)}
+.fab-linea-meta{font-size:11.5px;color:var(--text2);margin-top:2px}
+.fab-linea-body{padding:16px 18px;border-top:1px solid var(--border)}
+.fab-linea-acts{display:flex;gap:6px;align-items:center}
+
+.fab-section-title{font-weight:700;font-size:11.5px;color:var(--text2);letter-spacing:.3px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.fab-section-block{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.fab-section-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+
+.fab-toggle-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text2);margin-bottom:16px;cursor:pointer}
+
+.fab-fase-item{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.fab-fase-head{padding:10px 14px;background:#FAFAFA;display:flex;align-items:center;gap:10px;justify-content:space-between}
+.fab-fase-num{background:var(--brand);color:#fff;font-size:10.5px;font-weight:800;border-radius:6px;padding:3px 9px;flex-shrink:0;letter-spacing:.3px}
+.fab-fase-nombre{font-weight:700;font-size:13.5px;flex:1;color:var(--text)}
+.fab-fase-acts{display:flex;gap:4px}
+.fab-fase-tareas{padding:10px 14px}
+
+.fab-tarea-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px;border-bottom:1px dashed var(--border)}
+.fab-tarea-row:last-child{border-bottom:none}
+.fab-tarea-num{color:var(--text3);font-size:11px;width:20px;flex-shrink:0;text-align:right}
+.fab-tarea-desc{flex:1;color:var(--text)}
+.fab-tarea-acts{display:flex;gap:2px}
+
+.fab-icon-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);padding:3px 5px;border-radius:5px}
+.fab-icon-btn:hover{color:var(--brand);background:var(--surface2)}
+
+.fab-kit-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;border-bottom:1px dashed var(--border)}
+.fab-kit-row:last-child{border-bottom:none}
+
+.fab-empty{color:var(--text3);font-size:12px;font-style:italic;padding:4px 0 12px}
+
+.fab-warn-box{background:#FFF8E1;border-left:3px solid #7B4F00;padding:10px 13px;border-radius:0 8px 8px 0;font-size:12px;color:#5c3d00;margin-top:10px}
+.fab-ok-box{background:#E8F5E9;border-left:3px solid var(--green);padding:10px 13px;border-radius:0 8px 8px 0;font-size:12px;color:#0f3d13;margin-top:10px}
+.fab-info-box{background:var(--surface2);border-left:3px solid var(--border);padding:10px 13px;border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);margin-top:8px}
+
+.fab-checklist-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #F0F0F0;font-size:13px}
+.fab-checklist-item input{width:auto;margin-top:2px;flex-shrink:0}
+.fab-checklist-item.done .fab-checklist-desc{text-decoration:line-through;color:var(--text3)}
+.fab-checklist-num{color:var(--text3);font-size:11px;width:20px;flex-shrink:0;text-align:right}
+.fab-checklist-desc{flex:1}
