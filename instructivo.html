@@ -129,7 +129,7 @@
 
 <div class="layout">
 <nav class="sidebar">
-  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.16</p></div></div>
+  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.17</p></div></div>
 
   <div class="section-label">Introducción</div>
   <a href="#intro">🏠 ¿Qué es esta app?</a>
@@ -181,7 +181,7 @@
     <h1>🛡️ Viking Security Systems</h1>
     <p>Manual del sistema administrativo — ciclo completo del negocio, de presupuesto a mantenimiento</p>
     <div class="hero-badges">
-      <span class="badge badge-red">✓ v2.16</span>
+      <span class="badge badge-red">✓ v2.17</span>
       <span class="badge badge-blue">✓ Sin servidor</span>
       <span class="badge badge-amber">✓ Datos locales</span>
     </div>
@@ -214,6 +214,7 @@
       <div><div class="section-title">Presupuestos</div><div class="section-subtitle">Relevamientos y cotizaciones, de borrador a cliente <span class="badge badge-red">Configurable por línea en DEV</span></div></div>
     </div>
     <p>Cada fila es una cotización con nombre, dirección, línea de producto, técnico y estado (<b>Borrador → Enviado → Aprobado / Rechazado</b>). Se puede cargar a mano ("➕ Nuevo manual") o importar desde la app móvil de relevamiento en campo.</p>
+    <div class="tip">💡 Si el presupuesto es para alguien que ya es cliente de Viking, elegilo del desplegable "Cliente existente" arriba del formulario — completa nombre, teléfono, email, dirección y barrio solo, sin tener que volver a escribirlos.</div>
 
     <h2>Tabla de precios configurable por línea <span class="badge badge-green">Nuevo</span></h2>
     <p>El modal de presupuesto ya no trae fijo el catálogo de Zpro (Central, sensores Zigbee, etc.). Ahora, al elegir la <b>Línea de producto</b> arriba del todo, la tabla de "Cómputo de materiales y precios" se arma sola con los ítems que esa línea tenga configurados — agrupados en las secciones que definiste (Equipamiento, Mano de obra, o las que quieras).</p>
@@ -519,6 +520,13 @@
 
     <details class="changelog-details" open>
       <summary class="changelog-summary">Ver historial de versiones</summary>
+
+      <div class="changelog-entry">
+        <div class="changelog-version"><span class="v-num">v2.17</span><span class="changelog-tag tag-feature">feature</span></div>
+        <ul class="changelog-list">
+          <li>Nuevo presupuesto: se puede elegir un <b>cliente existente</b> de la lista para autocompletar nombre, teléfono, email, dirección (tomada del lote) y barrio, en vez de escribirlos a mano. Sigue siendo editable después de autocompletar. No vincula el presupuesto a ese cliente — eso sigue pasando solo con "Convertir a cliente" cuando el presupuesto queda Aprobado.</li>
+        </ul>
+      </div>
 
       <div class="changelog-entry">
         <div class="changelog-version"><span class="v-num">v2.16</span><span class="changelog-tag tag-fix">fix</span></div>
