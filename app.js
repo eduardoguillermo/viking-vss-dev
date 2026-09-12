@@ -1569,7 +1569,7 @@ function renderPresupuestos(){
   }
   tb.innerHTML=list.map(p=>{
     var clienteYaCreado=p.clienteId&&DB.clientes.find(function(c){return c.id===p.clienteId;});
-const aprBtn=p.estado==='Aprobado'&&!clienteYaCreado?'<button class="btn btn-sm btn-g" onclick="convertirCliente('+p.id+')">👤 Cliente</button>':(p.estado==='Aprobado'&&clienteYaCreado?'<span style="font-size:11px;color:var(--green)">✔ '+clienteYaCreado.nombre+'</span>' : '');
+const aprBtn=p.estado==='Aprobado'&&!clienteYaCreado?'<button class="btn btn-sm btn-g" onclick="convertirCliente('+p.id+')">👤 Cliente Activo</button>':(p.estado==='Aprobado'&&clienteYaCreado?'<span style="font-size:11px;color:var(--green)">✔ '+clienteYaCreado.nombre+'</span>' : '');
     return '<tr>'+
       '<td><strong>'+p.nombre+'</strong></td>'+
       '<td>'+p.dir+(p.barrio?' · '+p.barrio:'')+'</td>'+
@@ -1716,7 +1716,7 @@ function verPresupuesto(id){
   });
 
   var cliExiste=p.clienteId&&DB.clientes.find(function(c){return c.id===p.clienteId;});
-const aprBtn=p.estado==='Aprobado'&&!cliExiste?'<button class="btn btn-sm btn-g" onclick="convertirCliente('+p.id+');cerrarModal()">👤 Convertir en cliente</button>':(p.estado==='Aprobado'&&cliExiste?'<span style="font-size:11px;color:var(--green)">✔ Cliente: '+cliExiste.nombre+'</span>':'');
+const aprBtn=p.estado==='Aprobado'&&!cliExiste?'<button class="btn btn-sm btn-g" onclick="convertirCliente('+p.id+');cerrarModal()">👤 Cliente Activo</button>':(p.estado==='Aprobado'&&cliExiste?'<span style="font-size:11px;color:var(--green)">✔ Cliente: '+cliExiste.nombre+'</span>':'');
 
   openModal('Presupuesto '+presNum(p),
     '<div style="display:flex;gap:8px;margin-bottom:12px">'+
@@ -7488,7 +7488,7 @@ function abrirEditorPres(id){
     '<div style="display:flex;gap:8px;margin-top:8px">'+
       '<button class="btn btn-p" style="flex:1" onclick="generarPDF('+id+');cerrarModal()">PDF</button>'+
       '<button class="btn" style="flex:1;color:var(--blue);border-color:var(--blue)" onclick="enviarEmailPres('+id+');cerrarModal()">Email</button>'+
-      (p.estado==='Aprobado'?'<button class="btn btn-g" style="flex:1" onclick="convertirCliente('+id+');cerrarModal()">Cliente</button>':'')+
+      (p.estado==='Aprobado'?'<button class="btn btn-g" style="flex:1" onclick="convertirCliente('+id+');cerrarModal()">Cliente Activo</button>':'')+
     '</div>'
   , function(){
     // Force save before closing
