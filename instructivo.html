@@ -129,7 +129,7 @@
 
 <div class="layout">
 <nav class="sidebar">
-  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.8</p></div></div>
+  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.9</p></div></div>
 
   <div class="section-label">Introducción</div>
   <a href="#intro">🏠 ¿Qué es esta app?</a>
@@ -181,7 +181,7 @@
     <h1>🛡️ Viking Security Systems</h1>
     <p>Manual del sistema administrativo — ciclo completo del negocio, de presupuesto a mantenimiento</p>
     <div class="hero-badges">
-      <span class="badge badge-red">✓ v2.8</span>
+      <span class="badge badge-red">✓ v2.9</span>
       <span class="badge badge-blue">✓ Sin servidor</span>
       <span class="badge badge-amber">✓ Datos locales</span>
     </div>
@@ -211,16 +211,23 @@
   <section class="section" id="presupuestos">
     <div class="section-header">
       <span class="section-icon">📄</span>
-      <div><div class="section-title">Presupuestos</div><div class="section-subtitle">Relevamientos y cotizaciones, de borrador a cliente</div></div>
+      <div><div class="section-title">Presupuestos</div><div class="section-subtitle">Relevamientos y cotizaciones, de borrador a cliente <span class="badge badge-red">Configurable por línea en DEV</span></div></div>
     </div>
-    <p>Cada fila es una cotización con nombre, dirección, modelo Zpro, técnico y estado (<b>Borrador → Enviado → Aprobado / Rechazado</b>). Se puede cargar a mano ("➕ Nuevo manual") o importar desde la app móvil de relevamiento en campo.</p>
+    <p>Cada fila es una cotización con nombre, dirección, línea de producto, técnico y estado (<b>Borrador → Enviado → Aprobado / Rechazado</b>). Se puede cargar a mano ("➕ Nuevo manual") o importar desde la app móvil de relevamiento en campo.</p>
+
+    <h2>Tabla de precios configurable por línea <span class="badge badge-green">Nuevo</span></h2>
+    <p>El modal de presupuesto ya no trae fijo el catálogo de Zpro (Central, sensores Zigbee, etc.). Ahora, al elegir la <b>Línea de producto</b> arriba del todo, la tabla de "Cómputo de materiales y precios" se arma sola con los ítems que esa línea tenga configurados — agrupados en las secciones que definiste (Equipamiento, Mano de obra, o las que quieras).</p>
+    <p>Los ítems de cada línea se configuran desde <a href="#kit">Líneas de producto → ⚙️ Presupuesto</a>: un modal aparte donde agregás/editás/borrás ítems, cada uno con su sección. Si una línea todavía no tiene ítems cargados, el presupuesto lo avisa y te manda para allá.</p>
+    <div class="note">📌 El nombre, teléfono, dirección y barrio del cliente son siempre los mismos campos, sin importar la línea — solo la parte de materiales/precios cambia según el producto elegido.</div>
+    <div class="warning">⚠️ Al cambiar la línea de un presupuesto ya cargado, se pierden los precios que tenía asignados a los ítems de la línea anterior (quedan guardados en los datos pero no se muestran). Pensado para elegir la línea una sola vez, al principio.</div>
 
     <h2>Importar relevamiento</h2>
     <p>"📥 Importar relevamiento" lee el archivo JSON que exporta la app móvil (<code>viking-relevamiento</code>). Cada relevamiento entra como presupuesto en estado Borrador; si el mismo relevamiento ya se había importado antes, no se duplica.</p>
-    <p>"☁️ Sincronizar desde Drive" <span class="badge badge-green">Nuevo</span> hace lo mismo sin ningún archivo de por medio: la app móvil sube directo a Google Drive los relevamientos que marcás como Aprobados ahí, y este botón los trae — mismo criterio de duplicados que la importación manual.</p>
+    <p>"☁️ Sincronizar desde Drive" hace lo mismo sin ningún archivo de por medio: la app móvil sube directo a Google Drive los relevamientos que marcás como Aprobados ahí, y este botón los trae — mismo criterio de duplicados que la importación manual.</p>
+    <div class="note">📌 Los relevamientos importados no traen línea de producto asignada todavía (eso es específico de Zpro/Zigbee, que la app móvil de relevamiento no conoce) — hay que elegirla a mano en el presupuesto una vez importado.</div>
 
     <h2>Convertir a cliente</h2>
-    <p>Un presupuesto <b>Aprobado</b> se puede convertir en cliente con un clic: pasa a la pantalla de Alta con nombre, teléfono, dirección, email, ambientes y modelo ya cargados, y los sensores relevados quedan listos para importarse — solo falta completar lote, MAC, PIN OTA y versión instalada.</p>
+    <p>Un presupuesto <b>Aprobado</b> se puede convertir en cliente con un clic: pasa a la pantalla de Alta con nombre, teléfono, dirección, email y ambientes ya cargados — solo falta completar lote, MAC, PIN OTA y versión instalada.</p>
     <div class="note">📌 Un presupuesto aprobado es también el punto de entrada de <a href="#gestion">Gestión económica</a> y de una <a href="#fabricacion">orden de trabajo "desde presupuesto"</a> — todo el circuito comercial cuelga de ese estado.</div>
   </section>
 
@@ -357,17 +364,18 @@
   <section class="section" id="kit">
     <div class="section-header">
       <span class="section-icon">🏭</span>
-      <div><div class="section-title">Líneas de producto</div><div class="section-subtitle">El corazón del nuevo motor de Fabricación <span class="badge badge-red">Nuevo en DEV</span></div></div>
+      <div><div class="section-title">Líneas de producto</div><div class="section-subtitle">El corazón de Fabricación y de Presupuestos <span class="badge badge-red">Nuevo en DEV</span></div></div>
     </div>
-    <p>Reemplaza lo que antes era un único "Kit de fabricación" global. Acá armás, para cada producto que fabriques, todo lo que antes estaba fijo en el código:</p>
+    <p>Reemplaza lo que antes era un único "Kit de fabricación" global. Acá armás, para cada producto que fabriques o vendas, todo lo que antes estaba fijo en el código:</p>
     <ul>
-      <li><b>📝 Descripción del producto</b> — texto libre, para dejar anotado qué es y para qué sirve.</li>
+      <li><b>📝 Descripción del producto</b> — texto libre; también aparece en el PDF del presupuesto, debajo del nombre de la línea.</li>
       <li><b>Checklist obligatorio</b> — toggle por línea: informativo (por defecto) u obligatorio para poder completar una fase.</li>
       <li><b>📦 Kit de materiales</b> — igual que el viejo kit de fabricación, pero uno por línea, contra el catálogo real de <a href="#stock">Logística</a>.</li>
       <li><b>🔧 Fases</b> — las que necesites, en el orden que quieras (reordenables con ▲▼), cada una con su propia lista de tareas numeradas (también reordenables).</li>
+      <li><b>⚙️ Configuración de presupuesto</b> — un modal aparte donde cargás los ítems que van a aparecer en la tabla de precios de <a href="#presupuestos">Presupuestos</a> para esta línea, agrupados en las secciones que quieras (Equipamiento, Mano de obra, etc.).</li>
     </ul>
-    <p>Todo se edita en el momento — agregar, editar, reordenar o borrar una fase o tarea no afecta a las OT que ya estén en curso con la versión anterior de esa fase.</p>
-    <div class="warning">⚠️ Al borrar una línea que tiene OTs creadas, esas OTs quedan con una línea inexistente y no se puede seguir operando sobre ellas desde ese punto. Se avisa antes de confirmar.</div>
+    <p>Todo se edita en el momento — agregar, editar, reordenar o borrar una fase, tarea o ítem de presupuesto no afecta a las OT o presupuestos que ya estén en curso con la versión anterior.</p>
+    <div class="warning">⚠️ Al borrar una línea que tiene OTs o presupuestos creados, esos registros quedan con una línea inexistente y no se puede seguir operando sobre ellos desde ese punto. Se avisa antes de confirmar.</div>
   </section>
 
   <!-- INSTALACIONES -->
@@ -508,6 +516,16 @@
 
     <details class="changelog-details" open>
       <summary class="changelog-summary">Ver historial de versiones</summary>
+
+      <div class="changelog-entry">
+        <div class="changelog-version"><span class="v-num">v2.9</span><span class="changelog-tag tag-feature">feature</span></div>
+        <ul class="changelog-list">
+          <li><b>Presupuestos configurables por línea de producto</b>: el modal de presupuesto reemplaza el catálogo fijo de Zpro (Central, sensores Zigbee, modelo Base/Energy/Comfort/Black) por una tabla de precios armada dinámicamente según la línea elegida</li>
+          <li>Nuevo modal "⚙️ Configuración de presupuesto" por línea, en Líneas de producto — ítems agrupados en las secciones que definas</li>
+          <li>El PDF del presupuesto ahora muestra el nombre y la descripción de la línea en vez del badge "Zpro + modelo", y una tabla genérica de equipamiento en vez de la tabla fija de sensores</li>
+          <li>Corregidos los lugares que mostraban el modelo Zpro en listados de Presupuestos (listado principal, reportes, buscador global, email) — ahora muestran la línea de producto</li>
+        </ul>
+      </div>
 
       <div class="changelog-entry">
         <div class="changelog-version"><span class="v-num">v2.8</span><span class="changelog-tag tag-feature">feature</span></div>
