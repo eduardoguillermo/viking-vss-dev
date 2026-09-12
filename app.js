@@ -1555,8 +1555,7 @@ function renderPresupuestos(){
   tb.innerHTML=list.map(p=>{
     var clienteYaCreado=p.clienteId&&DB.clientes.find(function(c){return c.id===p.clienteId;});
 const aprBtn=p.estado==='Aprobado'&&!clienteYaCreado?'<button class="btn btn-sm btn-g" onclick="convertirCliente('+p.id+')">👤 Cliente</button>':(p.estado==='Aprobado'&&clienteYaCreado?'<span style="font-size:11px;color:var(--green)">✔ '+clienteYaCreado.nombre+'</span>' : '');
-    var esKit=m.tipo==='Salida'&&(m.motivo||'').toLowerCase().includes('kit');
-    return '<tr'+(esKit?' style="background:rgba(255,193,7,0.15)"':'')+'>'+
+    return '<tr>'+
       '<td><strong>'+p.nombre+'</strong></td>'+
       '<td>'+p.dir+(p.barrio?' · '+p.barrio:'')+'</td>'+
       '<td>'+presLineaPill(p)+'</td>'+
