@@ -89,52 +89,9 @@ if(!DB.kitinstFecha) DB.kitinstFecha = today();
 if(!DB.kit) DB.kit = [];
 if(!DB.kitVersion) DB.kitVersion = 1;
 
-// ===== DEV: Líneas de producto (reemplaza el motor fijo ETAPAS_FAB) =====
-// Semilla: "Zpro" migra las 5 fases reales tal cual estaban hardcodeadas,
-// ahora editables. Kit arranca vacío — se carga a mano en "Líneas de producto".
-if(!DB.lineasProducto){
-  DB.lineasProducto = [
-    {
-      id: 1,
-      nombre: 'Zpro',
-      esZpro: true,
-      checklistObligatorio: false,
-      kit: (DB.kit||[]).map(function(item){ return Object.assign({}, item); }), // migra el kit global existente, si había
-      fases: [
-        { id:'mecanizado', nombre:'Mecanizado', ops:[
-          'Apertura de unidad en sistema y generación del N° de serie',
-          'Estampado del N/S en el fondo interno de la caja',
-          'Perforación con fresa escalonada para prensaestopas',
-          'Atornillado del transformador en la base del gabinete'
-        ]},
-        { id:'montaje', nombre:'Montaje electrónico', ops:[
-          'Soldadura de chicotes en salidas del transformador',
-          'Crimpado de terminales Faston en cables de batería',
-          'Montaje de placa ESP32-C6 sobre separadores',
-          'Ruteo de líneas 220V y cables de salida (sirena y 12V aux)',
-          'Verificación de margen técnico de 15cm'
-        ]},
-        { id:'calibracion', nombre:'Calibración y CC', ops:[
-          'Vinculación Zigbee — sensores asignados al cliente / sensores testigo',
-          'Verificación de enlace Zigbee estable',
-          'Protocolo QA Telegram — aprobado (ver checklist físico)'
-        ]},
-        { id:'embalaje', nombre:'Embalaje', ops:[
-          'Introducir batería de gel en habitáculo (sin conectar terminales)',
-          'Proteger conectores Faston con capuchones o cinta',
-          'Colocar kit de repuesto (fusibles) en bolsa accesoria',
-          'Atornillar tapa frontal',
-          'Empacar en caja de cartón con modelo visible'
-        ]},
-        { id:'egreso', nombre:'Fabricación terminada', ops:[
-          'Confirmar N° de serie en el sistema',
-          'Vincular con ficha del cliente'
-        ]}
-      ]
-    }
-  ];
-  DB.nid = Math.max(DB.nid||1, 2);
-}
+// ===== DEV: Líneas de producto (reemplaza por completo el motor fijo ETAPAS_FAB / Zpro) =====
+// Sin semilla: arranca vacío. El usuario define sus propias líneas de producto desde cero.
+if(!DB.lineasProducto) DB.lineasProducto = [];
 if(!DB.kitFecha) DB.kitFecha = today();
 // Migrate ordenes - add numero if missing
 DB.ordenes.forEach(function(o,i){
@@ -4873,43 +4830,6 @@ function pdfRecibo(fondoId){
   w.document.close();
 }
 
-function crearOTDesdeAnticipo(cliId){
-  var c = DB.clientes.find(function(x){return x.id===cliId;});
-  if(!c){ alert('Cliente no encontrado.'); return; }
-
-  var tieneOT = (DB.fabricacion||[]).find(function(o){return o.clienteId===cliId&&o.estado!=='Cancelado';});
-  if(tieneOT){ alert('Este cliente ya tiene una OT: '+tieneOT.nserie); return; }
-
-  var lineaZpro = (DB.lineasProducto||[]).find(function(l){return l.esZpro;});
-  if(!lineaZpro || !lineaZpro.fases.length){ alert('No se encontró la línea de producto Zpro configurada.'); return; }
-
-  var loteMax = (DB.fabricacion||[]).reduce(function(a,f){return Math.max(a,f.lote||0);},0);
-  var loteNuevo = loteMax + 1;
-  var nserie = getNumSerie(c.modelo||'Base', loteNuevo);
-
-  if(!confirm('¿Generar OT de fabricación para '+c.nombre+'?\nN° de serie: '+nserie)) return;
-
-  var ot = {
-    id:DB.nid++, nserie:nserie, lineaId:lineaZpro.id,
-    modelo:c.modelo||'Base', lote:loteNuevo,
-    cliente:c.nombre, clienteId:c.id,
-    presId:c.presId||null,
-    fecha:today(), estado:'Pendiente',
-    etapaActual:lineaZpro.fases[0].id,
-    obs:'Generada desde anticipo de pago',
-    etapas:{}, materiales:[], kitConsumido:false, instalacionGenerada:false, fechaInicio:''
-  };
-  lineaZpro.fases.forEach(function(e){
-    ot.etapas[e.id]={completada:false,fecha:'',responsable:'',obs:'',ops:{}};
-    e.ops.forEach(function(op){ot.etapas[e.id].ops[op]=false;});
-  });
-  if(!DB.fabricacion) DB.fabricacion=[];
-  DB.fabricacion.push(ot);
-  c.estadoInstalacion='Programado';
-  save();
-  renderFondos();
-  alert('✅ OT creada: '+nserie+'\nCliente: '+c.nombre);
-}
 
 function renderFondos(){
   var el = document.getElementById('fondos-body');
@@ -5001,15 +4921,6 @@ function renderFondos(){
       '<td style="text-align:right;font-size:11px;color:var(--text2)">'+(usd?'U$S '+usd.toFixed(0):'—')+'</td>'+
       '<td style="display:flex;gap:3px">'+
         (function(){
-          if(f.rubro==='Anticipos por ventas'&&f.vinculo&&f.vinculo.startsWith('cli:')){
-            var cliId=parseInt(f.vinculo.slice(4));
-            var cliObj=DB.clientes.find(function(x){return x.id===cliId;});
-            if(cliObj){
-              var tieneOT=(DB.fabricacion||[]).find(function(o){return o.clienteId===cliId&&o.estado!=='Cancelado';});
-              if(!tieneOT) return '<button class="btn btn-sm btn-p" onclick="crearOTDesdeAnticipo('+cliId+')" title="Generar OT de fabricación">🔧 OT</button>';
-              return '<span style="font-size:10px;color:var(--green)">✔ OT '+tieneOT.nserie+'</span>';
-            }
-          }
           return '';
         })()+
         (f.rubro==='Anticipos por ventas'?'<button class="btn btn-sm" onclick="pdfRecibo('+f.id+')" title="Recibo de anticipo">🧾</button>':'')+
@@ -5525,21 +5436,9 @@ function reporteOCporProveedor(){
 // FABRICACION
 // =======================================================
 
-var MODELO_LETRA = {Base:'B', Energy:'E', Comfort:'C', Black:'K'};
-
 function getLineaOT(f){ return (DB.lineasProducto||[]).find(function(l){return l.id===f.lineaId;}); }
 
-function getNumSerie(modelo, lote){
-  var letra = MODELO_LETRA[modelo]||'X';
-  var now = new Date();
-  var aa = String(now.getFullYear()).slice(2);
-  var mm = String(now.getMonth()+1).padStart(2,'0');
-  var ll = String(lote).padStart(2,'0');
-  var enLote = (DB.fabricacion||[]).filter(function(f){return f.lote===parseInt(lote);}).length;
-  var nnn = String(enLote+1).padStart(3,'0');
-  return 'VSS-'+letra+aa+mm+'-'+ll+'-'+nnn;
-}
-// Numeración genérica para líneas de producto que no son Zpro
+// Numeración genérica para cualquier línea de producto
 function getNumOT(linea, lote){
   var prefijo = (linea.nombre||'OT').replace(/[^a-zA-Z0-9]/g,'').slice(0,4).toUpperCase();
   var now = new Date();
@@ -5584,7 +5483,7 @@ function renderFabricacion(){
     var estadoColor=f.estado==='Pendiente'?'p-a':f.estado==='En fabricación'?'p-b':f.estado==='Terminado'||f.estado==='Entregado'?'p-g':'p-r';
     return '<tr>'+
       '<td style="font-family:monospace;font-size:11px;font-weight:700">'+f.nserie+'</td>'+
-      '<td>'+(linea.esZpro?mPill(f.modelo):'<span class="pill p-x">'+linea.nombre+'</span>')+'</td>'+
+      '<td>'+'<span class="pill p-x">'+linea.nombre+'</span>'+'</td>'+
       '<td style="text-align:center">'+f.lote+'</td>'+
       '<td style="font-size:11px">'+(f.cliente||'Stock')+'</td>'+
       '<td>'+
@@ -5611,7 +5510,7 @@ function modalNuevaOT(){
   openModal('Nueva orden de trabajo',
     '<div class="fg2">'+
       '<div class="fg full"><label>Línea de producto</label>'+
-        '<select id="ot-linea" onchange="toggleOTModelo()" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%">'+
+        '<select id="ot-linea" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%">'+
           lineas.map(function(l){return '<option value="'+l.id+'">'+l.nombre+'</option>';}).join('')+
         '</select></div>'+
       '<div class="fg"><label>Origen</label>'+
@@ -5624,10 +5523,6 @@ function modalNuevaOT(){
           '<option value="">-- seleccionar --</option>'+
           presList.map(function(p){return '<option value="'+p.id+'">'+presNum(p)+' — '+p.nombre+'</option>';}).join('')+
         '</select></div>'+
-      '<div class="fg" id="ot-modelo-wrap"><label>Modelo</label>'+
-        '<select id="ot-modelo" style="padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:100%">'+
-          ['Base','Energy','Comfort','Black'].map(function(m){return '<option>'+m+'</option>';}).join('')+
-        '</select></div>'+
       '<div class="fg"><label>N° de lote</label>'+
         '<input id="ot-lote" type="number" min="1" value="'+(loteMax+1)+'"></div>'+
       '<div class="fg full"><label>Observaciones</label>'+
@@ -5638,13 +5533,12 @@ function modalNuevaOT(){
       var linea=(DB.lineasProducto||[]).find(function(l){return l.id===lineaId;});
       if(!linea){alert('Seleccioná una línea de producto.');return false;}
       if(!linea.fases||!linea.fases.length){alert('Esta línea de producto todavía no tiene fases configuradas.');return false;}
-      var modelo=linea.esZpro?document.getElementById('ot-modelo').value:null;
       var lote=parseInt(document.getElementById('ot-lote').value)||1;
       var origen=document.getElementById('ot-origen').value;
       var presId=origen==='presupuesto'?(parseInt(document.getElementById('ot-presupuesto').value)||null):null;
       var pres=presId?DB.presupuestos.find(function(p){return p.id===presId;}):null;
       var cliente=pres?pres.nombre:'';
-      var nserie=linea.esZpro?getNumSerie(modelo,lote):getNumOT(linea,lote);
+      var nserie=getNumOT(linea,lote);
 
       // Buscar cliente dado de alta
       var clienteObj=pres?DB.clientes.find(function(c){return c.nombre===pres.nombre;}):null;
@@ -5653,7 +5547,6 @@ function modalNuevaOT(){
         id:DB.nid++,
         lineaId:lineaId,
         nserie:nserie,
-        modelo:modelo,
         lote:lote,
         cliente:cliente,
         clienteId:clienteObj?clienteObj.id:null,
@@ -5687,14 +5580,6 @@ function modalNuevaOT(){
       return true;
     }
   );
-  setTimeout(toggleOTModelo, 30);
-}
-
-function toggleOTModelo(){
-  var lineaId=parseInt(document.getElementById('ot-linea')?document.getElementById('ot-linea').value:0);
-  var linea=(DB.lineasProducto||[]).find(function(l){return l.id===lineaId;});
-  var wrap=document.getElementById('ot-modelo-wrap');
-  if(wrap) wrap.style.display=(linea&&linea.esZpro)?'':'none';
 }
 
 function toggleOTCliente(){
@@ -5780,7 +5665,7 @@ function abrirOT(id){
   var headerHTML=
     '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
       '<span style="font-family:monospace;font-weight:700;font-size:14px;color:var(--primary)">'+f.nserie+'</span>'+
-      (linea&&linea.esZpro?mPill(f.modelo):'<span class="pill p-x">'+(linea?linea.nombre:'⚠️ línea eliminada')+'</span>')+
+      ('<span class="pill p-x">'+(linea?linea.nombre:'⚠️ línea eliminada')+'</span>')+
       '<span class="pill '+(f.estado==='Pendiente'?'p-a':f.estado==='En fabricación'?'p-b':'p-g')+'">'+f.estado+'</span>'+
       (f.cliente?'<span style="font-size:11px;color:var(--text2)">Cliente: '+f.cliente+'</span>':'')+
       '<span style="font-size:11px;color:var(--text2)">Lote '+f.lote+' · Creada '+f.fecha+'</span>'+
@@ -5881,8 +5766,7 @@ function abrirOT(id){
       '<div class="ch">'+
         '<div class="ct" style="color:'+(completada?'var(--green)':esActual?'var(--primary)':'var(--text2)')+'">'+icon+' '+(ei+1)+'. '+e.nombre+'</div>'+
         (esActual?
-          '<button class="btn btn-sm btn-g" '+(bloqueadoPorChecklist?'disabled':'')+' onclick="completarEtapaFab('+id+',\''+e.id+'\')">✔ Completar etapa</button>'+
-          (e.id==='calibracion'?'<button class="btn btn-sm" onclick="pdfChecklistQA('+id+')">🖨️ Checklist QA</button>':''):
+          '<button class="btn btn-sm btn-g" '+(bloqueadoPorChecklist?'disabled':'')+' onclick="completarEtapaFab('+id+',\''+e.id+'\')">✔ Completar etapa</button>':
           '')+ 
         (completada?'<span style="font-size:11px;color:var(--green)">✅ '+et.fecha+(et.responsable?' · '+et.responsable:'')+'</span>':'')+
       '</div>'+
@@ -5962,8 +5846,7 @@ function completarEtapaFab(otId, etapaId){
 }
 
 // Genera el pedido de instalación de forma manual (reemplaza la generación automática de antes).
-// Zpro sigue usando la lógica real de armado de kit por sensores Zigbee (crearPedidoInstalacion).
-// Las líneas nuevas usan una versión simple, armada solo con el kit propio de la línea.
+// Arma el kit del pedido a partir del kit propio de la línea de producto.
 function generarPedidoInstalacionManual(otId){
   var f=DB.fabricacion.find(function(x){return x.id===otId;});
   if(!f) return;
@@ -5972,7 +5855,7 @@ function generarPedidoInstalacionManual(otId){
   if(!f.clienteId){ alert('Esta OT no tiene cliente vinculado — no se puede generar un pedido de instalación.'); return; }
   if((DB.instalaciones||[]).some(function(p){return p.otId===f.id;})){ alert('Ya existe un pedido de instalación para esta OT.'); return; }
 
-  var piNuevo = linea.esZpro ? crearPedidoInstalacion(f.id) : crearPedidoInstalacionSimple(f.id);
+  var piNuevo = crearPedidoInstalacionSimple(f.id);
   if(!piNuevo) return;
 
   var matPendiente=(f.materiales||[]).filter(function(m){return m.cant>(m.devuelto||0);});
@@ -5993,8 +5876,7 @@ function generarPedidoInstalacionManual(otId){
   alert('✅ Pedido de instalación generado: '+piNuevo.numero);
 }
 
-// Versión simple de crearPedidoInstalacion para líneas de producto que no son Zpro:
-// arma el kit solo con lo cargado en linea.kit, sin la lógica de sensores Zigbee.
+// Arma el pedido de instalación con el kit propio de la línea de producto.
 function crearPedidoInstalacionSimple(otId){
   var ot = (DB.fabricacion||[]).find(function(f){return f.id===otId;});
   if(!ot) return null;
@@ -6155,10 +6037,10 @@ function renderLineasProducto(){
     var kit=l.kit||[];
     return '<div class="card" style="margin-bottom:10px">'+
       '<div class="ch" style="cursor:pointer" onclick="toggleLineaProducto('+l.id+')">'+
-        '<div class="ct">'+(l.esZpro?'🔒 ':'')+l.nombre+'<div style="font-size:10.5px;font-weight:400;color:var(--text2);margin-top:2px">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div></div>'+
+        '<div class="ct">'+l.nombre+'<div style="font-size:10.5px;font-weight:400;color:var(--text2);margin-top:2px">'+nFases+' fase'+(nFases!==1?'s':'')+' · '+nTareas+' tarea'+(nTareas!==1?'s':'')+' · '+kit.length+' ítem'+(kit.length!==1?'s':'')+' de kit · checklist '+(l.checklistObligatorio?'obligatorio':'informativo')+'</div></div>'+
         '<div style="display:flex;gap:4px" onclick="event.stopPropagation()">'+
           '<button class="btn btn-sm" onclick="agregarFaseLinea('+l.id+')">➕ Fase</button>'+
-          (l.esZpro?'':'<button class="btn btn-sm" style="color:var(--red)" onclick="borrarLineaProducto('+l.id+')">🗑️</button>')+
+          '<button class="btn btn-sm" style="color:var(--red)" onclick="borrarLineaProducto('+l.id+')">🗑️</button>'+
           '<span style="cursor:pointer;padding:0 4px">'+(abierta?'▲':'▼')+'</span>'+
         '</div>'+
       '</div>'+
@@ -6192,7 +6074,7 @@ function renderLineasProducto(){
               '<button class="btn btn-sm" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',-1)" style="padding:2px 6px">▲</button>'+
               '<button class="btn btn-sm" onclick="moverFaseLinea('+l.id+',\''+f.id+'\',1)" style="padding:2px 6px">▼</button>'+
               '<button class="btn btn-sm" onclick="editarFaseLinea('+l.id+',\''+f.id+'\')" style="padding:2px 6px">✏️</button>'+
-              (l.esZpro?'':'<button class="btn btn-sm" style="color:var(--red);padding:2px 6px" onclick="borrarFaseLinea('+l.id+',\''+f.id+'\')">🗑️</button>')+
+              '<button class="btn btn-sm" style="color:var(--red);padding:2px 6px" onclick="borrarFaseLinea('+l.id+',\''+f.id+'\')">🗑️</button>'+
             '</div>'+
             '<div style="padding:8px 12px">'+
               f.ops.map(function(op,oi){
@@ -6216,7 +6098,7 @@ function renderLineasProducto(){
 function crearLineaProducto(){
   var nombre=prompt('Nombre de la nueva línea de producto:');
   if(!nombre) return;
-  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, esZpro:false, checklistObligatorio:false, kit:[], fases:[]});
+  DB.lineasProducto.push({id:DB.nid++, nombre:nombre, checklistObligatorio:false, kit:[], fases:[]});
   save(); renderLineasProducto();
 }
 function borrarLineaProducto(id){
@@ -6341,88 +6223,6 @@ function getNumPI(){
     if(n>max) max=n;
   });
   return 'PI-'+yr+'-'+String(max+1).padStart(4,'0');
-}
-
-function crearPedidoInstalacion(otId){
-  // Called automatically when OT reaches Entrega completada
-  var ot = (DB.fabricacion||[]).find(function(f){return f.id===otId;});
-  if(!ot) return;
-
-  var cliente = DB.clientes.find(function(c){return c.id===ot.clienteId;})||null;
-
-  // Build kit from client zigbee sensors + kitinst base
-  var kitItems = [];
-
-  // 1. Kit base instalacion
-  (DB.kitinst||[]).forEach(function(item){
-    var comp = DB.componentes.find(function(c){return c.id===item.compId;})||{};
-    kitItems.push({
-      compId:item.compId,
-      compCodigo:comp.codigo||'',
-      compNombre:comp.desc||item.compNombre||'',
-      cant:item.cant,
-      unidad:comp.unidad||'',
-      origen:'kit-base',
-      devuelto:0
-    });
-  });
-
-  // 2. Zigbee sensors - from presupuesto (qty data) or from client zigbee list
-  var sensoresPI = {};
-  // Try presupuesto first (has qty per type)
-  var presCliente = cliente&&cliente.presId ? DB.presupuestos.find(function(p){return p.id===cliente.presId;}) : null;
-  if(presCliente&&presCliente.sensores&&typeof presCliente.sensores==='object'&&!Array.isArray(presCliente.sensores)){
-    Object.entries(presCliente.sensores).forEach(function(entry){
-      var tipo=entry[0]; var data=entry[1];
-      if(data&&data.qty&&data.qty>0) sensoresPI[tipo]={cant:data.qty,tipo:tipo};
-    });
-  }
-  // Fallback: count from cliente.zigbee array
-  if(!Object.keys(sensoresPI).length&&cliente&&cliente.zigbee&&cliente.zigbee.length){
-    cliente.zigbee.forEach(function(z){
-      var t=z.tipo||'Sensor';
-      if(!sensoresPI[t]) sensoresPI[t]={cant:0,tipo:t};
-      sensoresPI[t].cant++;
-    });
-  }
-  Object.values(sensoresPI).forEach(function(z){
-    var comp=DB.componentes.find(function(c){
-      return c.area==='Instalacion'&&c.desc&&c.desc.toLowerCase().includes(z.tipo.toLowerCase());
-    })||null;
-    kitItems.push({
-      compId:comp?comp.id:null,
-      compCodigo:comp?comp.codigo:'',
-      compNombre:z.tipo,
-      cant:z.cant,
-      unidad:'u',
-      origen:'zigbee',
-      devuelto:0
-    });
-  });
-
-  var pi={
-    id:DB.nid++,
-    numero:getNumPI(),
-    otId:otId,
-    nserie:ot.nserie,
-    modelo:ot.modelo,
-    clienteId:ot.clienteId||null,
-    cliente:ot.cliente||'Stock',
-    direccion:cliente?(cliente.lote||'')+(cliente.barrio?' · '+cliente.barrio:''):'',
-    tel:cliente?cliente.tel||'':'',
-    tecnico:'',
-    fechaTentativa:'',
-    estado:'Pendiente',
-    fecha:today(),
-    kit:kitItems,
-    obs:''
-  };
-
-  DB.instalaciones.push(pi);
-  // Update cliente estado
-  if(cliente) cliente.estadoInstalacion='Pendiente';
-  save();
-  return pi;
 }
 
 function renderInstalaciones(){
@@ -6825,192 +6625,6 @@ function initNavCollapse(){
 }
 
 
-function pdfChecklistQA(otId){
-  var f = (DB.fabricacion||[]).find(function(x){return x.id===otId;});
-  if(!f) return;
-  var empresa = (DB.config&&DB.config.empresa)||'Viking Security Systems';
-  var modelo = f.modelo||'Base';
-  var modelos_all = ['Base','Energy','Comfort','Black'];
-  var es_energy_plus = ['Energy','Comfort','Black'].includes(modelo);
-  var es_comfort_plus = ['Comfort','Black'].includes(modelo);
-  var es_black = modelo==='Black';
-
-  var modelo_pill = {'Base':'🔵 BASE','Energy':'🟡 ENERGY','Comfort':'🟠 COMFORT','Black':'⚫ BLACK'};
-
-  var fases = [
-    {num:1, titulo:'Verificación de arranque', todos:true, items:[
-      'Conectar por USB, monitor serie 115200 bps',
-      '[BOOT] Z-PRO Security v10.01 iniciando...',
-      '[NVS] Usuarios: N cargados',
-      '[WIFI] Conectado — IP: 192.168.x.x',
-      '[SSL] Certificado DigiCert cargado',
-      '[NTP] Zona: UTC-3',
-      '[ZB] Coordinador Zigbee iniciado',
-      '[BOOT] Sistema listo.'
-    ]},
-    {num:2, titulo:'Comandos de lectura', todos:true, items:[
-      '/start — Menú con estado del sistema',
-      '/estado — Alarma desarmada, energía OK, rol Admin',
-      '/version — Muestra v10.01, lote y barrio',
-      '/ids — Lista dispositivos',
-      '/bypass_list — Sin sensores en bypass',
-      '/retardos — Muestra retardos configurados',
-      '/historial — Sin eventos (primera vez)',
-      '/zona — Muestra UTC-3 por defecto'
-    ]},
-    {num:3, titulo:'Gestión de usuarios y roles', todos:true, items:[
-      '/user_list — Solo Admin de fábrica',
-      '/user_add ID_TEST Tester usuario — Confirmación + bienvenida',
-      'Desde Tester: /estado — Responde correctamente',
-      'Desde Tester: /vincular — Sin autorización',
-      '/user_rol ID_TEST lectura — Confirmación de cambio',
-      'Desde Tester: /desarmar — Sin autorización',
-      '/user_del ID_TEST — Confirmación de eliminación',
-      'Desde Tester: /estado — Sin autorización'
-    ]},
-    {num:4, titulo:'Zona horaria y NTP', todos:true, items:[
-      '/zona -5 — Confirmación UTC-5',
-      '/historial — Eventos usan hora UTC-5',
-      '/zona -3 — Retorno a UTC-3'
-    ]},
-    {num:5, titulo:'Ciclo de armado y pánico', todos:true, items:[
-      '/armar — Notifica armado a todos',
-      '/estado — Muestra alarma ARMADA',
-      '/panico — Sirena ON + notif. propietario + notif. guardia barrio',
-      '/historial — Evento pánico con hora correcta',
-      '/desarmar — Sirena OFF + notifica a todos',
-      '/estado — Muestra alarma DESARMADA'
-    ]},
-    {num:6, titulo:'Retardo de egreso', todos:true, items:[
-      '/armar 15 — Responde: Tienes 15s para salir',
-      'Esperar 15s — Arma automático + notifica',
-      '/desarmar — Desarma normalmente',
-      '/armar 15 — Inicia retardo nuevamente',
-      '/desarmar antes de 15s — Retardo cancelado'
-    ]},
-    {num:7, titulo:'Sensores Zigbee', todos:true, items:[
-      '/vincular — Red Zigbee abierta 60s',
-      'Emparejar SNZB-04 (puerta) — Log confirma',
-      '/armar → Abrir sensor → Disparo + sirena ON',
-      '/desarmar — Sirena OFF',
-      '/bypass 0xADDR — Bypass activo',
-      '/armar → Abrir sensor → NO dispara (bypass)',
-      '/bypass_off 0xADDR — Sensor reincorporado',
-      'Emparejar SNZB-01P (pánico) — Log confirma',
-      '/armar → 1 click → Pánico + sirena + notif.',
-      '/desarmar — Sirena OFF',
-      '2 clicks SNZB-01P — Toggle armado/desarmado'
-    ]},
-    {num:8, titulo:'Retardo de entrada', todos:true, items:[
-      'Configurar retardoSeg = 15 en sensor puerta',
-      '/armar → Abrir sensor → Notifica: 15s para desarmar',
-      'Esperar sin desarmar → Disparo al vencer tiempo',
-      '/desarmar — Sirena OFF',
-      '/armar → Abrir sensor → /desarmar antes de 15s → NO dispara'
-    ]},
-    {num:9, titulo:'Historial y persistencia NVS', todos:true, items:[
-      '/historial — Todos los eventos con hora correcta',
-      'Presionar RESET en ESP32',
-      '/historial — Mismos eventos persisten tras reinicio',
-      '/estado — Zona horaria y usuarios siguen configurados'
-    ]},
-    {num:10, titulo:'Actualización OTA', todos:true, items:[
-      '/update PIN_MAL URL — Responde: PIN incorrecto',
-      '/update 1234 URL — Descarga + reinicio + /version confirma'
-    ]},
-    {num:11, titulo:'Monitor de energía y UPS', todos:false, modelos:'Energy / Comfort / Black', aplica:es_energy_plus, items:[
-      'Cortar 12V CC → Notif. corte al propietario, sistema activo con batería',
-      '/estado — Responde con batería',
-      'Reconectar 12V CC → Notif. recuperación',
-      '/historial — Corte y recuperación con hora'
-    ]},
-    {num:12, titulo:'Luces Zigbee — Domótica Nivel A', todos:false, modelos:'Comfort / Black', aplica:es_comfort_plus, items:[
-      '/luz_on — Todas las luces encienden',
-      '/luz_off — Todas apagan',
-      '/luz_on Entrada — Solo luz Entrada enciende',
-      '/luz_off Entrada — Solo Entrada apaga',
-      '/armar y /panico → Luces encienden automáticamente',
-      '/desarmar — Sirena OFF',
-      'Click largo SNZB-01P — Toggle luz más cercana'
-    ]},
-    {num:13, titulo:'Sensor de agua', todos:false, modelos:'Comfort / Black', aplica:es_comfort_plus, items:[
-      'Activar sensor agua → Notif. SOLO al propietario',
-      'Chat guardia — NO recibe notificación',
-      'Sirena — NO suena',
-      '/historial — Evento agua con hora'
-    ]},
-    {num:14, titulo:'Simulador de presencia — Domótica Nivel B', todos:false, modelos:'Solo Black', aplica:es_black, items:[
-      '/presencia_on — Confirmación activado',
-      '/estado — Muestra Presencia: Activa',
-      'Log serie — Aparece [PRESENCIA] Luz X ON/OFF',
-      '/presencia_off — Luces apagan + confirmación',
-      '/estado — Muestra Presencia: Inactiva'
-    ]}
-  ];
-
-  var css = '*{box-sizing:border-box;margin:0;padding:0}'+
-    'body{font-family:Segoe UI,Arial,sans-serif;padding:20px;font-size:11px;color:#222}'+
-    '.header{background:#111;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}'+
-    '.header h1{font-size:14px;font-weight:700}'+
-    '.header .sub{font-size:10px;color:#aaa}'+
-    '.datos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}'+
-    '.dato{background:#f8f8f8;border-radius:4px;padding:6px 10px}'+
-    '.dato .l{font-size:9px;color:#999;font-weight:700;text-transform:uppercase}'+
-    '.dato .v{font-size:12px;font-weight:600}'+
-    '.fase{margin-bottom:10px;border:1px solid #ddd;border-radius:4px;overflow:hidden}'+
-    '.fase-head{background:#B71C1C;color:#fff;padding:5px 10px;font-size:10px;font-weight:700;display:flex;justify-content:space-between}'+
-    '.fase-head.na{background:#999}'+
-    '.item{display:flex;align-items:flex-start;gap:8px;padding:4px 10px;border-bottom:1px solid #f0f0f0}'+
-    '.item:last-child{border-bottom:none}'+
-    '.cb{width:14px;height:14px;border:1.5px solid #999;border-radius:2px;flex-shrink:0;margin-top:1px}'+
-    '.result{margin-left:auto;font-size:9px;color:#999;white-space:nowrap}'+
-    '.footer{margin-top:16px;border-top:2px solid #B71C1C;padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:20px}'+
-    '.sign{border-top:1px solid #333;padding-top:4px;font-size:9px;color:#666}'+
-    '.btn{position:fixed;top:12px;right:12px;background:#B71C1C;color:#fff;border:none;padding:6px 14px;border-radius:5px;cursor:pointer;font-size:11px}'+
-    '@media print{.btn{display:none}@page{margin:10mm}}';
-
-  var fasesHTML = fases.map(function(fase){
-    var aplica = fase.todos || fase.aplica;
-    var headClass = aplica ? 'fase-head' : 'fase-head na';
-    var items = aplica ? fase.items.map(function(item){
-      return '<div class="item"><div class="cb"></div><div style="flex:1;font-size:10px">'+item+'</div><div class="result">PASS &nbsp; FAIL &nbsp; N/A</div></div>';
-    }).join('') : '<div class="item" style="color:#999;font-style:italic;padding:6px 10px">No aplica a este modelo</div>';
-    var modLabel = fase.todos ? 'Todos los modelos' : fase.modelos;
-    return '<div class="fase">'+
-      '<div class="'+headClass+'"><span>FASE '+fase.num+' — '+fase.titulo+'</span><span>'+modLabel+'</span></div>'+
-      items+'</div>';
-  }).join('');
-
-  var w = window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QA '+f.nserie+'</title><style>'+css+'</style></head><body>'+
-    '<button class="btn" onclick="window.print()">🖨️ Imprimir</button>'+
-    '<div class="header">'+
-      '<div><div class="sub">PROTOCOLO QA DE FÁBRICA — Z-PRO Security v10.01</div>'+
-      '<h1>'+empresa.toUpperCase()+'</h1></div>'+
-      '<div style="text-align:right;font-size:11px">'+modelo_pill[modelo]+'<br><span style="font-family:monospace;font-size:13px;font-weight:700">'+f.nserie+'</span></div>'+
-    '</div>'+
-    '<div class="datos">'+
-      '<div class="dato"><div class="l">N° de serie</div><div class="v" style="font-family:monospace">'+f.nserie+'</div></div>'+
-      '<div class="dato"><div class="l">Modelo</div><div class="v">Zpro '+modelo+'</div></div>'+
-      '<div class="dato"><div class="l">Lote</div><div class="v">'+f.lote+'</div></div>'+
-      '<div class="dato"><div class="l">Fecha</div><div class="v">'+today()+'</div></div>'+
-      '<div class="dato"><div class="l">Técnico</div><div class="v">___________________________</div></div>'+
-      '<div class="dato"><div class="l">MAC WiFi</div><div class="v">___________________________</div></div>'+
-    '</div>'+
-    fasesHTML+
-    '<div class="footer">'+
-      '<div>'+
-        '<div style="margin-bottom:8px"><strong>✅ APROBADA para embalaje</strong> &nbsp;&nbsp; <strong>❌ RECHAZADA</strong></div>'+
-        '<div class="sign">Firma técnico: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Fecha: ___________</div>'+
-      '</div>'+
-      '<div>'+
-        '<div style="font-size:10px;color:#666;margin-bottom:4px">Observaciones:</div>'+
-        '<div style="border:1px solid #ddd;height:50px;border-radius:4px"></div>'+
-      '</div>'+
-    '</div>'+
-    '</body></html>');
-  w.document.close();
-}
 
 
 
