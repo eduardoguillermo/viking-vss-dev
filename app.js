@@ -6156,12 +6156,14 @@ function abrirConfigPresupuesto(lineaId){
 }
 function agregarItemPresupuesto(lineaId){
   var seccion=prompt('Sección (ej: Equipamiento, Sensores, Mano de obra, Adicionales):');
-  if(!seccion) return;
+  if(seccion===null) return; // canceló
+  if(!seccion.trim()){ alert('Tenés que escribir un nombre de sección.'); return; }
   var nombre=prompt('Nombre del ítem:');
-  if(!nombre) return;
+  if(nombre===null) return; // canceló
+  if(!nombre.trim()){ alert('Tenés que escribir un nombre de ítem.'); return; }
   var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
   if(!l.itemsPresupuesto) l.itemsPresupuesto=[];
-  l.itemsPresupuesto.push({id:DB.nid++, seccion:seccion, nombre:nombre});
+  l.itemsPresupuesto.push({id:DB.nid++, seccion:seccion.trim(), nombre:nombre.trim()});
   save();
   abrirConfigPresupuesto(lineaId);
   renderLineasProducto();
@@ -6170,10 +6172,12 @@ function editarItemPresupuesto(lineaId, itemId){
   var l=DB.lineasProducto.find(function(x){return x.id===lineaId;});
   var it=l.itemsPresupuesto.find(function(x){return x.id===itemId;});
   var nombre=prompt('Editar nombre del ítem:', it.nombre);
-  if(!nombre) return;
+  if(nombre===null) return;
+  if(!nombre.trim()){ alert('Tenés que escribir un nombre de ítem.'); return; }
   var seccion=prompt('Editar sección:', it.seccion);
-  if(!seccion) return;
-  it.nombre=nombre; it.seccion=seccion;
+  if(seccion===null) return;
+  if(!seccion.trim()){ alert('Tenés que escribir un nombre de sección.'); return; }
+  it.nombre=nombre.trim(); it.seccion=seccion.trim();
   save();
   abrirConfigPresupuesto(lineaId);
   renderLineasProducto();
