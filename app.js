@@ -458,7 +458,7 @@ function renderDatos(){
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text2)">Estado:</span>
         ${['Programado','En fabricación','Terminado','Pendiente','En curso','Completada'].map(s=>
-          '<button onclick="setEstadoInstalacion('+c.id+',\''+s+'\')" style="padding:3px 10px;border-radius:12px;font-size:11px;border:1px solid var(--border);cursor:pointer;background:'+(c.estadoInstalacion===s?'var(--primary)':'var(--surface2)')+';color:'+(c.estadoInstalacion===s?'#fff':'var(--text)')+'">'+s+'</button>'
+          '<button onclick="setEstadoInstalacion('+c.id+',\''+s+'\')" style="padding:3px 10px;border-radius:12px;font-size:11px;border:1px solid var(--border);cursor:pointer;background:'+(c.estadoInstalacion===s?'var(--brand)':'var(--surface2)')+';color:'+(c.estadoInstalacion===s?'#fff':'var(--text)')+'">'+s+'</button>'
         ).join('')}
       </div>
       <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Notas internas</label>
@@ -732,7 +732,7 @@ function modalMant(idx){
   const tipoOpts=['Correctivo','Preventivo','Configuración','Actualización de firmware','Cambio de pilas','Garantía','Otro'];
   openModal(idx>=0?'Editar registro — '+m.numero:'Nuevo registro de mantenimiento',`
     <div class="fg2">
-      <div class="fg"><label>N° Registro</label><div style="padding:6px 9px;font-family:monospace;font-weight:700;color:var(--primary)">${numMant}</div></div>
+      <div class="fg"><label>N° Registro</label><div style="padding:6px 9px;font-family:monospace;font-weight:700;color:var(--brand)">${numMant}</div></div>
       <div class="fg"><label>Fecha *</label><input id="mt-f" type="date" value="${m.fecha||today()}"></div>
       <div class="fg"><label>Técnico</label><input id="mt-te" value="${m.tecnico||''}" placeholder="Nombre del técnico"></div>
       <div class="fg"><label>Tipo *</label><select id="mt-ti">${tipoOpts.map(t=>`<option${(m.tipo||'')==t?' selected':''}>${t}</option>`).join('')}</select></div>
@@ -3484,7 +3484,7 @@ function reporteUbicaciones(){
     // Barra de herramientas con toggle y búsqueda
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">'+
       '<div style="display:flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden">'+
-        '<button id="ubic-tab-cajas" class="btn" onclick="ubicToggle(\'cajas\')" style="border-radius:0;border:none;background:var(--primary);color:#fff;font-size:12px;padding:5px 14px">📦 Por caja</button>'+
+        '<button id="ubic-tab-cajas" class="btn" onclick="ubicToggle(\'cajas\')" style="border-radius:0;border:none;background:var(--brand);color:#fff;font-size:12px;padding:5px 14px">📦 Por caja</button>'+
         '<button id="ubic-tab-buscar" class="btn" onclick="ubicToggle(\'buscar\')" style="border-radius:0;border:none;background:transparent;font-size:12px;padding:5px 14px">🔍 Buscar componente</button>'+
       '</div>'+
       '<input id="ubic-q" type="text" placeholder="Buscar componente o caja..." oninput="ubicRender()" '+
@@ -3507,9 +3507,9 @@ function reporteUbicaciones(){
     var btnC = document.getElementById('ubic-tab-cajas');
     var btnB = document.getElementById('ubic-tab-buscar');
     if(btnC && btnB){
-      btnC.style.background = mode==='cajas'?'var(--primary)':'transparent';
+      btnC.style.background = mode==='cajas'?'var(--brand)':'transparent';
       btnC.style.color      = mode==='cajas'?'#fff':'';
-      btnB.style.background = mode==='buscar'?'var(--primary)':'transparent';
+      btnB.style.background = mode==='buscar'?'var(--brand)':'transparent';
       btnB.style.color      = mode==='buscar'?'#fff':'';
     }
     var qEl = document.getElementById('ubic-q');
@@ -3545,7 +3545,7 @@ function reporteUbicaciones(){
         h+='<tr>'+
           '<td style="font-family:monospace;font-size:11px">'+c.codigo+'</td>'+
           '<td><strong>'+c.desc+'</strong></td>'+
-          '<td><strong style="color:var(--primary)">'+ubic+'</strong></td>'+
+          '<td><strong style="color:var(--brand)">'+ubic+'</strong></td>'+
           '<td><span class="pill '+(c.area==='Mantenimiento'?'p-b':c.area==='Instalacion'?'p-a':'p-g')+'" style="font-size:10px">'+( c.area||'—')+'</span></td>'+
           '<td style="text-align:center;font-weight:700;color:'+sc+'">'+qty+' '+(c.unidad||'')+'</td>'+
           '<td style="text-align:center">'+eMat+'</td>'+
@@ -5489,7 +5489,7 @@ function renderFabricacion(){
       '<td>'+
         '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">'+(f.estado==='Pendiente'?'No iniciado':etapaActual.nombre)+'</div>'+
         '<div style="background:var(--surface2);border-radius:3px;height:5px;overflow:hidden">'+
-          '<div style="height:100%;background:var(--primary);width:'+pct+'%"></div>'+
+          '<div style="height:100%;background:var(--brand);width:'+pct+'%"></div>'+
         '</div>'+
       '</td>'+
       '<td><span class="pill '+estadoColor+'">'+f.estado+'</span></td>'+
@@ -6337,7 +6337,7 @@ function abrirPI(id){
 
   var body=
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
-      '<span style="font-family:monospace;font-weight:700;color:var(--primary)">'+p.numero+'</span>'+
+      '<span style="font-family:monospace;font-weight:700;color:var(--brand)">'+p.numero+'</span>'+
       '<span style="font-family:monospace;font-size:11px">'+p.nserie+'</span>'+
       mPill(p.modelo)+
       '<span class="pill '+estadoColor+'">'+p.estado+'</span>'+
@@ -6904,7 +6904,7 @@ function modalNuevoMant(){
 
   openModal('Nuevo registro de mantenimiento',
     '<div class="fg2">'+
-      '<div class="fg"><label>N° Registro</label><div style="padding:6px 9px;font-family:monospace;font-weight:700;color:var(--primary)">'+numNuevo+'</div></div>'+
+      '<div class="fg"><label>N° Registro</label><div style="padding:6px 9px;font-family:monospace;font-weight:700;color:var(--brand)">'+numNuevo+'</div></div>'+
       '<div class="fg"><label>Fecha *</label><input id="mn-f" type="date" value="'+today()+'"></div>'+
       '<div class="fg"><label>Técnico</label><input id="mn-te" placeholder="Nombre del técnico"></div>'+
       '<div class="fg full"><label>Cliente *</label>'+
