@@ -129,7 +129,7 @@
 
 <div class="layout">
 <nav class="sidebar">
-  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.6</p></div></div>
+  <div class="sidebar-logo"><span class="ico">🛡️</span><div><h1>Viking Security</h1><p>Manual · v2.7</p></div></div>
 
   <div class="section-label">Introducción</div>
   <a href="#intro">🏠 ¿Qué es esta app?</a>
@@ -155,7 +155,7 @@
 
   <div class="section-label">Fabricación</div>
   <a href="#fabricacion">🔧 Órdenes de trabajo</a>
-  <a href="#kit">📋 Kit de fabricación</a>
+  <a href="#kit">🏭 Líneas de producto</a>
 
   <div class="section-label">Instalaciones</div>
   <a href="#instalaciones">📋 Pedidos de instalación</a>
@@ -181,7 +181,7 @@
     <h1>🛡️ Viking Security Systems</h1>
     <p>Manual del sistema administrativo — ciclo completo del negocio, de presupuesto a mantenimiento</p>
     <div class="hero-badges">
-      <span class="badge badge-red">✓ v2.6</span>
+      <span class="badge badge-red">✓ v2.7</span>
       <span class="badge badge-blue">✓ Sin servidor</span>
       <span class="badge badge-amber">✓ Datos locales</span>
     </div>
@@ -336,34 +336,38 @@
   <section class="section" id="fabricacion">
     <div class="section-header">
       <span class="section-icon">🔧</span>
-      <div><div class="section-title">Órdenes de trabajo (Fabricación)</div><div class="section-subtitle">Cinco fases, del mecanizado al egreso a instalación</div></div>
+      <div><div class="section-title">Órdenes de trabajo (Fabricación)</div><div class="section-subtitle">Fases y tareas configurables por línea de producto <span class="badge badge-red">Rediseñado en DEV</span></div></div>
     </div>
-    <p>Una orden de trabajo (OT) se puede crear <b>manual</b> (para stock) o <b>desde un presupuesto aprobado</b> (queda vinculada al cliente, que pasa a estado "Programado"). Cada OT tiene un número de serie único generado automáticamente según modelo y lote (ej. <code>VSS-K2605-02-001</code>).</p>
+    <div class="note">📌 Esta versión DEV reemplaza por completo el motor fijo que tenía Zpro (5 fases hardcodeadas). Ahora cada línea de producto define sus propias fases, tareas y kit — ver <a href="#kit">Líneas de producto</a>. No hay ninguna línea precargada: hay que crear al menos una antes de poder cargar una OT.</div>
+
+    <p>Una orden de trabajo (OT) se crea siempre <b>manual</b>: elegís la línea de producto, el origen (Manual para stock, o Desde presupuesto aprobado — vincula el cliente y lo pasa a estado "Programado"), y el N° de lote. El número de serie se genera solo con un esquema genérico según el nombre de la línea, por ejemplo <code>OT-SENS2609-01-001</code>.</p>
 
     <h2>Inicio de fabricación</h2>
-    <p>Al iniciar la OT, el sistema compara el <a href="#kit">kit de fabricación</a> estándar contra el stock disponible; si falta algún material avisa antes de continuar (se puede igual seguir adelante). Confirmar el inicio da salida de stock a todo el kit de una vez y lo asigna como materiales en uso de esa OT — desde ahí también se puede sumar consumo adicional o devolver materiales sobrantes.</p>
+    <p>Al iniciar la OT, el sistema compara el <a href="#kit">kit de la línea</a> contra el stock disponible; si falta algún material avisa antes de continuar (se puede igual seguir adelante). Confirmar el inicio da salida de stock a todo el kit de una vez y lo asigna como materiales en uso de esa OT — desde ahí también se puede sumar consumo adicional o devolver materiales sobrantes.</p>
 
-    <h2>Las cinco fases</h2>
-    <table>
-      <tr><th>Fase</th><th>Contenido</th></tr>
-      <tr><td><b>1 · Mecanizado</b></td><td>Apertura del N° de serie, estampado en el gabinete, perforación para prensaestopas, montaje del transformador.</td></tr>
-      <tr><td><b>2 · Montaje electrónico</b></td><td>Soldadura, crimpado de terminales, montaje de la placa ESP32-C6, ruteo de cableado y verificación de márgenes técnicos.</td></tr>
-      <tr><td><b>3 · Calibración y CC</b></td><td>Vinculación Zigbee y verificación del protocolo de control de calidad (checklist QA imprimible, ver más abajo).</td></tr>
-      <tr><td><b>4 · Embalaje</b></td><td>Batería, protección de conectores, kit de repuesto, cierre y empaque.</td></tr>
-      <tr><td><b>5 · Fabricación terminada</b></td><td>Confirmación final del N° de serie y vínculo con la ficha del cliente.</td></tr>
-    </table>
-    <p>Cada fase tiene su propia lista de tareas (checkboxes) más responsable, fecha y observaciones; se completa fase por fase y no se puede saltear. Al completar la última fase, la OT pasa a <b>Terminado</b> y —si viene de un presupuesto— <b>se genera automáticamente el pedido de instalación</b>, preguntando antes si hay materiales sobrantes para devolver al stock.</p>
+    <h2>Fases dinámicas</h2>
+    <p>Cada línea define su propia cantidad de fases, cada una con su propia lista de tareas — no hay un número fijo. Se completa fase por fase y no se puede saltear. Cada fase tiene además responsable, fecha y observaciones libres.</p>
+    <div class="tip">💡 El checklist de tareas es <b>informativo por defecto</b> — no bloquea el avance. Si activás "Exigir todas las tareas tildadas" en la línea, el botón "Completar etapa" se deshabilita hasta tildar todo, y aparece un aviso listando exactamente qué tareas faltan (se actualiza solo, sin importar el orden en que las tildes).</div>
 
-    <div class="tip">💡 El checklist QA de la Fase 3 tiene una versión imprimible ("Checklist QA") con los comandos de Telegram a verificar contra el firmware Z-PRO — arranque, roles de usuario, zona horaria, ciclo de armado/pánico, retardos, etc.</div>
+    <h2>Al terminar</h2>
+    <p>Al completar la última fase, la OT pasa a <b>Terminado</b>. Si tiene cliente vinculado, aparece un botón manual "🚚 Generar pedido de instalación" — ya no es automático. Al generarlo, si quedaron materiales sobrantes, pregunta si querés devolverlos al stock.</p>
   </section>
 
-  <!-- KIT FABRICACION -->
+  <!-- LINEAS DE PRODUCTO -->
   <section class="section" id="kit">
     <div class="section-header">
-      <span class="section-icon">📋</span>
-      <div><div class="section-title">Kit de fabricación</div><div class="section-subtitle">La lista estándar de materiales de un equipo Zpro</div></div>
+      <span class="section-icon">🏭</span>
+      <div><div class="section-title">Líneas de producto</div><div class="section-subtitle">El corazón del nuevo motor de Fabricación <span class="badge badge-red">Nuevo en DEV</span></div></div>
     </div>
-    <p>Es la receta de materiales (código, descripción, cantidad, unidad) que se descuenta del stock cada vez que se inicia una orden de trabajo. Se edita agregando o quitando ítems del kit — cualquier cambio acá aplica a la próxima OT que se inicie, no afecta las ya iniciadas.</p>
+    <p>Reemplaza lo que antes era un único "Kit de fabricación" global. Acá armás, para cada producto que fabriques, todo lo que antes estaba fijo en el código:</p>
+    <ul>
+      <li><b>📝 Descripción del producto</b> — texto libre, para dejar anotado qué es y para qué sirve.</li>
+      <li><b>Checklist obligatorio</b> — toggle por línea: informativo (por defecto) u obligatorio para poder completar una fase.</li>
+      <li><b>📦 Kit de materiales</b> — igual que el viejo kit de fabricación, pero uno por línea, contra el catálogo real de <a href="#stock">Logística</a>.</li>
+      <li><b>🔧 Fases</b> — las que necesites, en el orden que quieras (reordenables con ▲▼), cada una con su propia lista de tareas numeradas (también reordenables).</li>
+    </ul>
+    <p>Todo se edita en el momento — agregar, editar, reordenar o borrar una fase o tarea no afecta a las OT que ya estén en curso con la versión anterior de esa fase.</p>
+    <div class="warning">⚠️ Al borrar una línea que tiene OTs creadas, esas OTs quedan con una línea inexistente y no se puede seguir operando sobre ellas desde ese punto. Se avisa antes de confirmar.</div>
   </section>
 
   <!-- INSTALACIONES -->
@@ -372,7 +376,7 @@
       <span class="section-icon">📋</span>
       <div><div class="section-title">Pedidos de instalación</div><div class="section-subtitle">De equipo terminado a sistema funcionando en el domicilio</div></div>
     </div>
-    <p>Un pedido de instalación (PI, numerado <code>PI-2026-0001</code>) nace automáticamente al terminar la fabricación de una OT ligada a cliente. Trae armado su propio kit de materiales: el <a href="#kitinst">kit base de instalación</a> más los sensores Zigbee relevados en el presupuesto original (o, si no hay presupuesto, los que ya figuren cargados en la ficha del cliente).</p>
+    <p>Un pedido de instalación (PI, numerado <code>PI-2026-0001</code>) se genera <b>manualmente</b> desde una OT Terminada con cliente vinculado (ver <a href="#fabricacion">Fabricación</a>). En esta versión DEV, el kit del pedido se arma únicamente con el <a href="#kit">kit de la línea de producto</a> de esa OT — no hay armado automático por sensores Zigbee relevados (eso era específico de Zpro y no existe más acá).</p>
     <h2>Estados y flujo</h2>
     <p><b>Pendiente → En curso → Completado</b> (o Cancelado). Antes de salir a instalar, "Confirmar salida de stock" descuenta del inventario todo el kit del pedido (avisa si falta algo). Al marcar <b>Completado</b>: el cliente pasa a estado "Completada", se agrega automáticamente una entrada al <a href="#ficha">historial OTA</a> del cliente ("Instalación inicial"), se guarda el técnico como nota, y se pregunta si hay materiales sobrantes para devolver al stock.</p>
   </section>
@@ -383,8 +387,9 @@
       <span class="section-icon">🧰</span>
       <div><div class="section-title">Kit base de instalación</div><div class="section-subtitle">Materiales comunes a toda instalación, aparte de los sensores</div></div>
     </div>
-    <p>Es la lista de materiales que se suma a todo pedido de instalación sin importar los sensores del cliente (cableado, fijaciones, insumos generales). Se edita igual que el <a href="#kit">kit de fabricación</a> y afecta a los pedidos que se generen de ahí en más.</p>
+    <div class="warning">⚠️ En esta versión DEV, esta pantalla quedó <b>desconectada</b> del resto del flujo: el armado del pedido de instalación ahora usa solo el kit de la línea de producto (ver arriba), no este kit base. La pantalla sigue existiendo y se puede editar, pero no tiene ningún efecto todavía. Si en algún momento hace falta, se puede volver a conectar.</div>
   </section>
+
 
   <!-- MANTENIMIENTO -->
   <section class="section" id="mantenimientos">
@@ -503,6 +508,18 @@
 
     <details class="changelog-details" open>
       <summary class="changelog-summary">Ver historial de versiones</summary>
+
+      <div class="changelog-entry">
+        <div class="changelog-version"><span class="v-num">v2.7</span><span class="changelog-tag tag-feature">feature</span></div>
+        <ul class="changelog-list">
+          <li><b>Fabricación rediseñada por completo</b>: reemplaza el motor fijo de 5 fases (antes hardcodeado para Zpro) por <a href="#kit">Líneas de producto</a> configurables — fases, tareas y kit de materiales propios por producto, checklist opcional obligatorio con aviso detallado de qué falta, numeración de OT genérica</li>
+          <li>Campo de descripción libre por línea de producto</li>
+          <li>Generación del pedido de instalación ahora es manual (antes automática al terminar la OT)</li>
+          <li>Estética de Fabricación renovada: cards, badges de fase y checklist con un diseño más claro y espaciado</li>
+          <li>Corregido: <code>var(--primary)</code> no existía en la hoja de estilos — 8 lugares del sistema (estado de instalación del cliente, kit por caja de Stock, N° de registro de mantenimiento, N° de orden de compra, barra de progreso de fabricación) se veían sin color de marca</li>
+          <li>Nota: el <a href="#kitinst">Kit base de instalación</a> quedó desconectado del armado del pedido en esta versión — ver aviso en esa sección</li>
+        </ul>
+      </div>
 
       <div class="changelog-entry">
         <div class="changelog-version"><span class="v-num">v2.6</span><span class="changelog-tag tag-feature">feature</span></div>
